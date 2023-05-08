@@ -63,11 +63,22 @@ class Board:
             > from sys import stdin
             > line = stdin.readline().split()
         """
+
+        row = sys.stdin.readline().split()[1:]
+        col = sys.stdin.readline().split()[1:]
+        num = int(sys.stdin.readline())
+        hints = []
+
+        print(row)
+        print(col)
+        print(num)
+        print(hints)
         # TODO
         pass
 
     # TODO: outros metodos da classe
 
+Board.parse_instance()
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
