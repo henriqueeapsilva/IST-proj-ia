@@ -56,23 +56,14 @@ class Board:
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
         e retorna uma instância da classe Board.
-
-        Por exemplo:
-            $ python3 bimaru.py < input_T01
-
-            > from sys import stdin
-            > line = stdin.readline().split()
         """
 
-        row = sys.stdin.readline().split()[1:]
-        col = sys.stdin.readline().split()[1:]
+        row = tuple(sys.stdin.readline().split()[1:])
+        col = tuple(sys.stdin.readline().split()[1:])
         num = int(sys.stdin.readline())
         hints = []
-
-        print(row)
-        print(col)
-        print(num)
-        print(hints)
+        for _ in range(num):
+            hints.append(tuple(sys.stdin.readline().split()[1:]))
         # TODO
         pass
 
