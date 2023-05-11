@@ -7,6 +7,7 @@
 # 103624 Afonso Azaruja
 
 import sys
+import numpy as np
 from search import (
     Problem,
     Node,
@@ -34,6 +35,22 @@ class BimaruState:
 
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
+
+    def __init__(self, row, col, hints):
+        self.board = np.full((10, 10), '-')
+        self.row = row
+        self.col = col
+        self.hints = hints     
+    
+    def calculate_state(self):
+        """Calcula o valor do estado interno, para ser usado no tabuleiro inicial"""
+        return self
+
+    def print_board(self):
+        for i in range(10):
+            for j in range(10):
+                sys.stdout.write(self.board[i][j])
+            sys.stdout.write("\n")
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -64,12 +81,9 @@ class Board:
         hints = []
         for _ in range(num):
             hints.append(tuple(sys.stdin.readline().split()[1:]))
-        # TODO
-        pass
+        return Board(row, col, hints).calculate_state()
 
     # TODO: outros metodos da classe
-
-Board.parse_instance()
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
@@ -112,4 +126,6 @@ if __name__ == "__main__":
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-    pass
+    board = Board.parse_instance()
+    Board.print_board(board)
+
