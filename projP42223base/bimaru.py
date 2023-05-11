@@ -55,37 +55,19 @@ class Board:
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.board[row][col]
+        if 0 <= row <= 9 and 0 <= col <= 9: 
+            return self.board[row][col]
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        if row < 0 or col < 0 or row > 9 or col > 9:
-            return None
-        if row == 0:
-            above_value = None
-        else:
-            above_value = self.board[row-1][col]
-        if row == 9:
-            below_value = None
-        else:
-            below_value = self.board[row+1][col]
-        return above_value, below_value
+        return (self.get_value(row-1, col) , self.get_value(row+1, col))
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        if row < 0 or col < 0 or row > 9 or col > 9:
-            return None
-        if col == 0:
-            left_value = None
-        else:
-            left_value = self.board[row][col-1]
-        if col == 9:
-            right_value = None
-        else:
-            right_value = self.board[row][col+1]
-        return left_value, right_value
+        return (self.get_value(row, col-1) , self.get_value(row, col+1))
+
 
     @staticmethod
     def parse_instance():
