@@ -40,7 +40,8 @@ class Board:
         self.board = np.full((10, 10), '-')
         self.row = row
         self.col = col
-        self.hints = hints     
+        for hint in hints:
+            self.board[int(hint[0])][int(hint[1])] = hint[2]
     
     def calculate_state(self):
         """Calcula o valor do estado interno, para ser usado no tabuleiro inicial"""
@@ -54,27 +55,49 @@ class Board:
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        # TODO
-        pass
+        return self.board[row][col]
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        # TODO
-        pass
+        if row < 0 or col < 0 or row > 9 or col > 9:
+            return None
+        if row == 0:
+            above_value = None
+        else:
+            above_value = self.board[row-1][col]
+        if row == 9:
+            below_value = None
+        else:
+            below_value = self.board[row+1][col]
+        return above_value, below_value
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        # TODO
-        pass
+        if row < 0 or col < 0 or row > 9 or col > 9:
+            return None
+        if col == 0:
+            left_value = None
+        else:
+            left_value = self.board[row][col-1]
+        if col == 9:
+            right_value = None
+        else:
+            right_value = self.board[row][col+1]
+        return left_value, right_value
 
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
         e retorna uma instância da classe Board.
-        """
+                
+        Por exemplo:
+            $ python3 takuzu.py < input_T01
 
+            > from sys import stdin
+            > stdin.readline()
+        """
         row = tuple(sys.stdin.readline().split()[1:])
         col = tuple(sys.stdin.readline().split()[1:])
         num = int(sys.stdin.readline())
