@@ -37,7 +37,7 @@ class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
     def __init__(self, row, col, hints):
-        self.board = np.full((10, 10), '-')
+        self.board = np.full((10, 10), "-")
         self.row = row
         self.col = col
         for hint in hints:
@@ -56,17 +56,19 @@ class Board:
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
         if 0 <= row <= 9 and 0 <= col <= 9: 
+            if (self.board[row][col] == "-"):
+                return None
             return self.board[row][col]
 
-    def adjacent_vertical_values(self, row: int, col: int) -> tuple(str, str):
+    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.get_value(row-1, col) , self.get_value(row+1, col))
+        return (self.get_value(row-1, col), self.get_value(row+1, col))
 
-    def adjacent_horizontal_values(self, row: int, col: int) -> tuple(str, str):
+    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.get_value(row, col-1) , self.get_value(row, col+1))
+        return (self.get_value(row, col-1), self.get_value(row, col+1))
 
 
     @staticmethod
@@ -133,4 +135,7 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
     Board.print_board(board)
-
+    print(board.adjacent_vertical_values(3, 3))
+    print(board.adjacent_horizontal_values(3, 3))
+    print(board.adjacent_vertical_values(1, 0))
+    print(board.adjacent_horizontal_values(1, 0))
