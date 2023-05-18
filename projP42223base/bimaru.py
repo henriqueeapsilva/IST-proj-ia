@@ -36,28 +36,25 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    def __init__(self, row, col, hints):
-        self.board = np.full((10, 10), "-")
+    def __init__(self, grid, row, col):
+        self.board = grid
         self.row = row
         self.col = col
-        for hint in hints:
-            self.board[int(hint[0])][int(hint[1])] = hint[2]
-    
-    def calculate_state(self):
-        """Calcula o valor do estado interno, para ser usado no tabuleiro inicial"""
-        return self
 
     def print_board(self):
         for i in range(10):
             for j in range(10):
-                sys.stdout.write(self.board[i][j])
+                if(self.board[i][j] == None):
+                    sys.stdout.write("?")
+                else:
+                    sys.stdout.write(self.board[i][j])
             sys.stdout.write("\n")
+
+    
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        if 0 <= row <= 9 and 0 <= col <= 9: 
-            if (self.board[row][col] == "-"):
-                return None
+        if 0 <= row <= 9 and 0 <= col <= 9:
             return self.board[row][col]
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
@@ -70,7 +67,6 @@ class Board:
         respectivamente."""
         return (self.get_value(row, col-1), self.get_value(row, col+1))
 
-
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -82,19 +78,22 @@ class Board:
             > from sys import stdin
             > stdin.readline()
         """
-        row = tuple(sys.stdin.readline().split()[1:])
-        col = tuple(sys.stdin.readline().split()[1:])
+        row = list(map(int, sys.stdin.readline().split()[1:]))
+        col = list(map(int, sys.stdin.readline().split()[1:]))
         num = int(sys.stdin.readline())
-        hints = []
+        grid = np.full((10,10), None, dtype=object)
         for _ in range(num):
-            hints.append(tuple(sys.stdin.readline().split()[1:]))
-        return Board(row, col, hints).calculate_state()
+            hint = tuple(sys.stdin.readline().split()[1:])
+            grid[int(hint[0])][int(hint[1])] = hint[2]
+        return Board(grid, row, col)
 
     # TODO: outros metodos da classe
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
+        state = BimaruState(board)
+        super().__init__(state)
         # TODO
         pass
 
@@ -134,8 +133,5 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
+    bimaru = Bimaru(board)
     Board.print_board(board)
-    print(board.adjacent_vertical_values(3, 3))
-    print(board.adjacent_horizontal_values(3, 3))
-    print(board.adjacent_vertical_values(1, 0))
-    print(board.adjacent_horizontal_values(1, 0))
