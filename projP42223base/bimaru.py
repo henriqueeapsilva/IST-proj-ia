@@ -18,7 +18,6 @@ from search import (
     recursive_best_first_search,
 )
 
-
 class BimaruState:
     state_id = 0
 
@@ -44,13 +43,15 @@ class Board:
     def insert(self, row: int, col: int, val):
         """Insere peça no board e atualiza os espaços livres e o número de peças
         que cabem em cada linha e coluna."""
-        self.free_row[row] -= 1
-        self.free_col[col] -= 1
-        if val != "W" and val != ".":
-            self.row[row] -= 1
-            self.col[col] -= 1
-        self.board[row][col] = val
-        return self
+        if 0 <= row <= 9 and 0 <= col <= 9:
+            if self.get_value(row, col) == None:
+                self.free_row[row] -= 1
+                self.free_col[col] -= 1
+                if val != "W" and val != ".":
+                    self.row[row] -= 1
+                    self.col[col] -= 1
+                self.board[row][col] = val
+                return self
 
     def calculate_state(self, hints):
         """Calcula o estado inicial do board"""
@@ -58,14 +59,46 @@ class Board:
         self.free_col = [10 for _ in range(10)]
 
         for j in hints:
-            self.insert(int(j[0]), int(j[1]), j[2])      
-            ### caso free_row(col) == row(col) então pode ser preenchida
+            r = int(j[0])
+            c = int(j[1])
+            self.insert(r, c, j[2])
 
+            if j[2] == "C":
+                if self.get_value(r-1, c-1) == None:
+                    self.insert(r-1, c-1, ".")
+                if self.get_value(r-1, c) == None:
+                    self.insert(r-1, c, ".")
+                if self.get_value(r-1, c+1) == None:
+                    self.insert(r-1, c+1, ".")
+                if self.get_value(r, c+1) == None:
+                    self.insert(r, c+1, ".")
+                if self.get_value(r+1, c+1) == None:
+                    self.insert(r+1, c+1, ".")
+                if self.get_value(r+1, c) == None:
+                    self.insert(r+1, c, ".")
+                if self.get_value(r+1, c-1) == None:
+                    self.insert(r+1, c-1, ".")
+                if self.get_value(r, c-1) == None:
+                    self.insert(r, c-1, ".")
+
+            if j[2] == "T":
+                pass
+            if j[2] == "R":
+                pass
+            if j[2] == "B":
+                pass
+            if j[2] == "L":
+                pass
+            if j[2] == "M":
+                pass
+
+        ### caso free_row(col) == row(col) então pode ser preenchida
         i = 0
         for j in self.row:
             if j == 0:
                 self.fill_row(i)
             i += 1
+
         i = 0
         for j in self.col:
             if j == 0:
@@ -112,6 +145,19 @@ class Board:
             self.get_value(row-1, col+1),
             self.get_value(row+1, col+1),
             self.get_value(row+1, col-1))
+    
+    def adjacent_values(self, row: int, col: int) -> (str, str, str, str, str, str, str, str):
+        """Devolve os valores à volta da coordenada"""
+        return (
+            self.get_value(row-1, col-1),
+            self.get_value(row-1, col), 
+            self.get_value(row-1, col+1),
+            self.get_value(row, col+1),
+            self.get_value(row+1, col+1),
+            self.get_value(row+1, col),
+            self.get_value(row+1, col-1),
+            self.get_value(row, col-1) 
+        )
 
     def fill_row(self, row: int):
         """Preenche as linhas que já estão completas com água"""
