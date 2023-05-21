@@ -41,16 +41,53 @@ class Board:
         self.row = row
         self.col = col
 
+    def insert(self, row: int, col: int, val):
+        """Insere peça no board e atualiza os espaços livres e o número de peças
+        que cabem em cada linha e coluna."""
+        self.free_row[row] -= 1
+        self.free_col[col] -= 1
+        if val != "W" and val != ".":
+            self.row[row] -= 1
+            self.col[col] -= 1
+        self.board[row][col] = val
+        return self
+
+    def calculate_state(self, hints):
+        """Calcula o estado inicial do board"""
+        self.free_row = [10 for _ in range(10)]
+        self.free_col = [10 for _ in range(10)]
+
+        for j in hints:
+            self.insert(int(j[0]), int(j[1]), j[2])      
+            ### caso free_row(col) == row(col) então pode ser preenchida
+
+        i = 0
+        for j in self.row:
+            if j == 0:
+                self.fill_row(i)
+            i += 1
+        i = 0
+        for j in self.col:
+            if j == 0:
+                self.fill_col(i)
+            i += 1
+
+        return self
+
     def print_board(self):
+        """Faz print do board no terminal."""
+        print(self.row)
+        print(self.col)
         for i in range(10):
             for j in range(10):
-                if(self.board[i][j] == None):
+                if(self.get_value(i, j) == None):
                     sys.stdout.write("?")
                 else:
                     sys.stdout.write(self.board[i][j])
             sys.stdout.write("\n")
+        print(self.free_row)
+        print(self.free_col)
 
-    
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -66,6 +103,29 @@ class Board:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
         return (self.get_value(row, col-1), self.get_value(row, col+1))
+    
+    def adjacent_diagonal_values(self, row: int, col: int) -> (str, str, str, str):
+        """Devolve os valores que se encontram nas diagonais, começando pelo,
+        canto superior esquerdo, seguindo os ponteiros do relógio."""
+        return (
+            self.get_value(row-1, col-1), 
+            self.get_value(row-1, col+1),
+            self.get_value(row+1, col+1),
+            self.get_value(row+1, col-1))
+
+    def fill_row(self, row: int):
+        """Preenche as linhas que já estão completas com água"""
+        for i in range(10):
+            if self.get_value(row, i) == None:
+                self.insert(row, i, ".")
+        return self
+
+    def fill_col(self, col: int):
+        """Preenche as colunas que já estão completas com água"""
+        for i in range(10):
+            if self.get_value(i, col) == None:
+                self.insert(i, col, ".")
+        return self
 
     @staticmethod
     def parse_instance():
@@ -81,11 +141,11 @@ class Board:
         row = list(map(int, sys.stdin.readline().split()[1:]))
         col = list(map(int, sys.stdin.readline().split()[1:]))
         num = int(sys.stdin.readline())
+        hints = []
         grid = np.full((10,10), None, dtype=object)
         for _ in range(num):
-            hint = tuple(sys.stdin.readline().split()[1:])
-            grid[int(hint[0])][int(hint[1])] = hint[2]
-        return Board(grid, row, col)
+            hints.append(tuple(sys.stdin.readline().split()[1:]))
+        return Board(grid, row, col).calculate_state(hints)
 
     # TODO: outros metodos da classe
 
