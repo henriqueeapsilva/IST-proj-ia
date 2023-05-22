@@ -18,6 +18,8 @@ from search import (
     recursive_best_first_search,
 )
 
+BOARD_SIZE = 10
+
 class BimaruState:
     state_id = 0
 
@@ -56,29 +58,29 @@ class Board:
         return self
 
     def calculate_state(self, hints):
-        """Calcula o estado inicial do board"""
+        """Calcula o estado inicial do board."""
         self.free_row = [10 for _ in range(10)]
         self.free_col = [10 for _ in range(10)]
 
         for j in hints:
             r = int(j[0])
             c = int(j[1])
-            self.insert(r, c, j[2])
+            v = j[2]
+            self.insert(r, c, v)
 
-            if j[2].lower() == 'c':
+            if v.lower() == 'c':
                self.circle_case(r, c)
-            if j[2].lower() == 't':
+            if v.lower() == 't':
                 self.top_case(r, c)
-            if j[2].lower() == 'r':
+            if v.lower() == 'r':
                 self.right_case(r, c)
-            if j[2].lower() == 'b':
+            if v.lower() == 'b':
                 self.bottom_case(r, c)
-            if j[2].lower() == 'l':
+            if v.lower() == 'l':
                 self.left_case(r,c)
-            if j[2].lower() == 'm':
+            if v.lower() == 'm':
                 self.middle_case(r,c)
 
-        ### caso free_row(col) == row(col) então pode ser preenchida
         i = 0
         for j in self.row:
             if j == 0:
@@ -90,6 +92,24 @@ class Board:
             if j == 0:
                 self.fill_col(i)
             i += 1
+
+        self.fill_missing()
+
+        return self
+
+    def fill_missing(self):
+        """No caso em que os espaços livres numa linha (coluna) é igual ao
+        número de peças de barcos que faltam nessa linha (coluna), essa linha
+        (coluna) é preenchida."""
+        for i in range(BOARD_SIZE):
+            if self.row[i] != 0 and self.free_row[i] == self.row[i]:
+                for col in range(10):
+                    if self.get_value(i, col) == None:
+                        self.insert(i, col, "u")
+            if self.col[i] != 0 and self.free_col[i] == self.col[i]:
+                for row in range(10):
+                    if self.get_value(row, i) == None:
+                        self.insert(row, i, "u")
 
         return self
 
@@ -177,8 +197,8 @@ class Board:
 
     def print_board(self):
         """Faz print do board no terminal."""
-        print(self.row)
-        print(self.col)
+        print("(LIN) Peças:",self.row, " Livres:", self.free_row)
+        print("(COL) Peças:",self.col, " Livres:", self.free_col)
         for i in range(10):
             for j in range(10):
                 if(self.get_value(i, j) == None):
@@ -189,9 +209,6 @@ class Board:
                     else:
                         sys.stdout.write(self.board[i][j])
             sys.stdout.write("\n")
-        print(self.free_row)
-        print(self.free_col)
-
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
