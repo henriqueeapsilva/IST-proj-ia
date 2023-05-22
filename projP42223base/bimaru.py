@@ -47,11 +47,13 @@ class Board:
             if self.get_value(row, col) == None:
                 self.free_row[row] -= 1
                 self.free_col[col] -= 1
-                if val != "W" and val != ".":
+                if val != "W" and val != "w":
                     self.row[row] -= 1
                     self.col[col] -= 1
                 self.board[row][col] = val
-                return self
+            elif self.get_value(row, col).islower():
+                self.board[row][col] = val
+        return self
 
     def calculate_state(self, hints):
         """Calcula o estado inicial do board"""
@@ -63,33 +65,17 @@ class Board:
             c = int(j[1])
             self.insert(r, c, j[2])
 
-            if j[2] == "C":
-                if self.get_value(r-1, c-1) == None:
-                    self.insert(r-1, c-1, ".")
-                if self.get_value(r-1, c) == None:
-                    self.insert(r-1, c, ".")
-                if self.get_value(r-1, c+1) == None:
-                    self.insert(r-1, c+1, ".")
-                if self.get_value(r, c+1) == None:
-                    self.insert(r, c+1, ".")
-                if self.get_value(r+1, c+1) == None:
-                    self.insert(r+1, c+1, ".")
-                if self.get_value(r+1, c) == None:
-                    self.insert(r+1, c, ".")
-                if self.get_value(r+1, c-1) == None:
-                    self.insert(r+1, c-1, ".")
-                if self.get_value(r, c-1) == None:
-                    self.insert(r, c-1, ".")
-
-            if j[2] == "T":
-                pass
-            if j[2] == "R":
-                pass
-            if j[2] == "B":
-                pass
-            if j[2] == "L":
-                pass
-            if j[2] == "M":
+            if j[2].lower() == 'c':
+               self.circle_case(r, c)
+            if j[2].lower() == 't':
+                self.top_case(r, c)
+            if j[2].lower() == 'r':
+                self.right_case(r, c)
+            if j[2].lower() == 'b':
+                self.bottom_case(r, c)
+            if j[2].lower() == 'l':
+                self.left_case(r,c)
+            if j[2].lower() == 'm':
                 pass
 
         ### caso free_row(col) == row(col) então pode ser preenchida
@@ -107,6 +93,79 @@ class Board:
 
         return self
 
+    def circle_case(self, r: int, c: int):
+        
+        self.insert(r-1, c-1, "w")
+        self.insert(r-1, c, "w")
+        self.insert(r-1, c+1, "w")
+        self.insert(r, c+1, "w")
+        self.insert(r+1, c+1, "w")
+        self.insert(r+1, c, "w")
+        self.insert(r+1, c-1, "w")
+        self.insert(r, c-1, "w")
+
+        return self
+
+    def top_case(self, r: int, c: int):
+        
+        self.insert(r-1, c-1, "w")
+        self.insert(r-1, c, "w")
+        self.insert(r-1, c+1, "w")
+        self.insert(r, c+1, "w")
+        self.insert(r+1, c+1, "w")
+        self.insert(r+1, c-1, "w")
+        self.insert(r, c-1, "w")
+        self.insert(r+2, c-1, "w")
+        self.insert(r+2, c+1, "w")
+        self.insert(r+1, c, "u")
+
+        return self
+
+    def right_case(self, r: int, c: int):
+        
+        self.insert(r-1, c-1, "w")
+        self.insert(r-1, c, "w")
+        self.insert(r-1, c+1, "w")
+        self.insert(r, c+1, "w")
+        self.insert(r+1, c+1, "w")
+        self.insert(r+1, c, "w")
+        self.insert(r+1, c-1, "w")
+        self.insert(r+1, c-2, "w")
+        self.insert(r-1, c-2, "w")
+        self.insert(r, c-1, "u")
+
+        return self
+    
+    def bottom_case(self, r: int, c: int):
+
+        self.insert(r-2, c-1, "w")
+        self.insert(r-2, c+1, "w")
+        self.insert(r-1, c+1, "w")
+        self.insert(r, c+1, "w")
+        self.insert(r+1, c+1, "w")
+        self.insert(r+1, c, "w")
+        self.insert(r+1, c-1, "w")
+        self.insert(r, c-1, "w")
+        self.insert(r-1, c-1, "w")
+        self.insert(r-1, c, "u")
+
+        return self
+    
+    def left_case(self, r: int, c: int):
+        
+        self.insert(r-1, c-1, "w")
+        self.insert(r-1, c, "w")
+        self.insert(r-1, c+1, "w")
+        self.insert(r, c-1, "w")
+        self.insert(r+1, c+1, "w")
+        self.insert(r+1, c, "w")
+        self.insert(r+1, c-1, "w")
+        self.insert(r+1, c+2, "w")
+        self.insert(r-1, c+2, "w")
+        self.insert(r, c+1, "u")
+
+        return self
+    
     def print_board(self):
         """Faz print do board no terminal."""
         print(self.row)
@@ -116,7 +175,10 @@ class Board:
                 if(self.get_value(i, j) == None):
                     sys.stdout.write("?")
                 else:
-                    sys.stdout.write(self.board[i][j])
+                    if self.get_value(i,j) == 'w':
+                        sys.stdout.write('.')
+                    else:
+                        sys.stdout.write(self.board[i][j])
             sys.stdout.write("\n")
         print(self.free_row)
         print(self.free_col)
@@ -163,14 +225,14 @@ class Board:
         """Preenche as linhas que já estão completas com água"""
         for i in range(10):
             if self.get_value(row, i) == None:
-                self.insert(row, i, ".")
+                self.insert(row, i, "w")
         return self
 
     def fill_col(self, col: int):
         """Preenche as colunas que já estão completas com água"""
         for i in range(10):
             if self.get_value(i, col) == None:
-                self.insert(i, col, ".")
+                self.insert(i, col, "w")
         return self
 
     @staticmethod
@@ -205,8 +267,8 @@ class Bimaru(Problem):
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
-        partir do estado passado como argumento."""
         # TODO
+        partir do estado passado como argumento."""
         pass
 
     def result(self, state: BimaruState, action):
