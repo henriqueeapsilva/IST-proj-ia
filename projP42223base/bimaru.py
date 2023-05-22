@@ -76,7 +76,7 @@ class Board:
             if j[2].lower() == 'l':
                 self.left_case(r,c)
             if j[2].lower() == 'm':
-                pass
+                self.middle_case(r,c)
 
         ### caso free_row(col) == row(col) então pode ser preenchida
         i = 0
@@ -165,7 +165,16 @@ class Board:
         self.insert(r, c+1, "u")
 
         return self
-    
+
+    def middle_case(self, r: int, c: int):
+
+        self.insert(r - 1, c - 1, "w")
+        self.insert(r - 1, c + 1, "w")
+        self.insert(r + 1, c + 1, "w")
+        self.insert(r + 1, c - 1, "w")
+
+        return self
+
     def print_board(self):
         """Faz print do board no terminal."""
         print(self.row)
