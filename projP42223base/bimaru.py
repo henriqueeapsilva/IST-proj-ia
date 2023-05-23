@@ -45,31 +45,47 @@ class Board:
         self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.boats = [1, 2, 3, 4]
         self.unknown_coord = []
+        self.coord = []
 
-    def insert(self, row: int, col: int, val):
+    def set_value(self, row: int, col: int, val):
         """Insere peça no board e atualiza os espaços livres e o número de peças
         que cabem em cada linha e coluna."""
         if 0 <= row <= 9 and 0 <= col <= 9:
             if self.get_value(row, col) == None:
+
                 self.free_row[row] -= 1
                 self.free_col[col] -= 1
-                if val != 'W' and val != 'w':
+                
+                if val.lower() != 'w':
                     self.row[row] -= 1
                     self.col[col] -= 1
+                    self.coord.append((row, col))
+                    self.coord.sort(key=lambda c: (c[0], c[1]))
+                
+                    if val == 'u':
+                        self.unknown_coord.append((row, col))
+                
                 self.board[row][col] = val
+            
             elif self.get_value(row, col).islower():
                 self.board[row][col] = val
+        
         return self
 
     def calculate_state(self, hints):
         """Calcula o estado inicial do board."""
-        for j in hints:
-            r = int(j[0])
-            c = int(j[1])
-            v = j[2]
+        for hint in hints:
+            r = int(hint[0])
+            c = int(hint[1])
+            v = hint[2]
 
-            self.insert(r, c, v)
+            self.set_value(r, c, v)
 
+        for hint in hints:
+            r = int(hint[0])
+            c = int(hint[1])
+            v = hint[2]
+ 
             if v.lower() == 'c':
                self.circle_case(r, c)
                self.boats[3] -= 1
@@ -101,100 +117,107 @@ class Board:
             if self.row[i] != 0 and self.free_row[i] == self.row[i]:
                 for col in range(BOARD_SIZE):
                     if self.get_value(i, col) == None:
-                        self.insert(i, col, 'u')
+                        self.set_value(i, col, 'u')
             if self.col[i] != 0 and self.free_col[i] == self.col[i]:
                 for row in range(BOARD_SIZE):
                     if self.get_value(row, i) == None:
-                        self.insert(row, i, 'u')
+                        self.set_value(row, i, 'u')
 
         return self
 
     def circle_case(self, r: int, c: int):
         
-        self.insert(r-1, c-1, 'w')
-        self.insert(r-1, c, 'w')
-        self.insert(r-1, c+1, 'w')
-        self.insert(r, c+1, 'w')
-        self.insert(r+1, c+1, 'w')
-        self.insert(r+1, c, 'w')
-        self.insert(r+1, c-1, 'w')
-        self.insert(r, c-1, 'w')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r, c+1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c, 'w')
+        self.set_value(r+1, c-1, 'w')
+        self.set_value(r, c-1, 'w')
 
         return self
 
     def top_case(self, r: int, c: int):
         
-        self.insert(r-1, c-1, 'w')
-        self.insert(r-1, c, 'w')
-        self.insert(r-1, c+1, 'w')
-        self.insert(r, c+1, 'w')
-        self.insert(r+1, c+1, 'w')
-        self.insert(r+1, c-1, 'w')
-        self.insert(r, c-1, 'w')
-        self.insert(r+2, c-1, 'w')
-        self.insert(r+2, c+1, 'w')
-        self.insert(r+1, c, 'u')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r, c+1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c-1, 'w')
+        self.set_value(r, c-1, 'w')
+        self.set_value(r+2, c-1, 'w')
+        self.set_value(r+2, c+1, 'w')
+        self.set_value(r+1, c, 'u')
 
         return self
 
     def right_case(self, r: int, c: int):
         
-        self.insert(r-1, c-1, 'w')
-        self.insert(r-1, c, 'w')
-        self.insert(r-1, c+1, 'w')
-        self.insert(r, c+1, 'w')
-        self.insert(r+1, c+1, 'w')
-        self.insert(r+1, c, 'w')
-        self.insert(r+1, c-1, 'w')
-        self.insert(r+1, c-2, 'w')
-        self.insert(r-1, c-2, 'w')
-        self.insert(r, c-1, 'u')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r, c+1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c, 'w')
+        self.set_value(r+1, c-1, 'w')
+        self.set_value(r+1, c-2, 'w')
+        self.set_value(r-1, c-2, 'w')
+        self.set_value(r, c-1, 'u')
 
         return self
     
     def bottom_case(self, r: int, c: int):
 
-        self.insert(r-2, c-1, 'w')
-        self.insert(r-2, c+1, 'w')
-        self.insert(r-1, c+1, 'w')
-        self.insert(r, c+1, 'w')
-        self.insert(r+1, c+1, 'w')
-        self.insert(r+1, c, 'w')
-        self.insert(r+1, c-1, 'w')
-        self.insert(r, c-1, 'w')
-        self.insert(r-1, c-1, 'w')
-        self.insert(r-1, c, 'u')
+        self.set_value(r-2, c-1, 'w')
+        self.set_value(r-2, c+1, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r, c+1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c, 'w')
+        self.set_value(r+1, c-1, 'w')
+        self.set_value(r, c-1, 'w')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c, 'u')
 
         return self
     
     def left_case(self, r: int, c: int):
         
-        self.insert(r-1, c-1, 'w')
-        self.insert(r-1, c, 'w')
-        self.insert(r-1, c+1, 'w')
-        self.insert(r, c-1, 'w')
-        self.insert(r+1, c+1, 'w')
-        self.insert(r+1, c, 'w')
-        self.insert(r+1, c-1, 'w')
-        self.insert(r+1, c+2, 'w')
-        self.insert(r-1, c+2, 'w')
-        self.insert(r, c+1, 'u')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r, c-1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c, 'w')
+        self.set_value(r+1, c-1, 'w')
+        self.set_value(r+1, c+2, 'w')
+        self.set_value(r-1, c+2, 'w')
+        self.set_value(r, c+1, 'u')
 
         return self
 
     def middle_case(self, r: int, c: int):
 
-        self.insert(r - 1, c - 1, 'w')
-        self.insert(r - 1, c + 1, 'w')
-        self.insert(r + 1, c + 1, 'w')
-        self.insert(r + 1, c - 1, 'w')
+        self.set_value(r - 1, c - 1, 'w')
+        self.set_value(r - 1, c + 1, 'w')
+        self.set_value(r + 1, c + 1, 'w')
+        self.set_value(r + 1, c - 1, 'w')
 
         return self
 
+    def process_unknown(self):
+        pass
+        #for coord in self.unknown_coord:
+
+
     def print_board(self):
         """Faz print do board no terminal."""
-        print("(ROW) Peças:",self.row, " Livres:", self.free_row, '\n')
-        print("(COL) Peças:",self.col, " Livres:", self.free_col, '\n')
+        print("(ROW) Peças:", self.row, " Livres:", self.free_row, '\n')
+        print("(COL) Peças:", self.col, " Livres:", self.free_col, '\n')
+        print("(COR)", len(self.coord), self.coord, '\n')
+        print("(UKN)", len(self.unknown_coord), self.unknown_coord, '\n')
         for i in range(10):
             for j in range(10):
                 if(self.get_value(i, j) == None):
@@ -262,14 +285,14 @@ class Board:
         """Preenche as linhas que já estão completas com água"""
         for i in range(BOARD_SIZE):
             if self.get_value(row, i) == None:
-                self.insert(row, i, 'w')
+                self.set_value(row, i, 'w')
         return self
 
     def fill_col(self, col: int):
         """Preenche as colunas que já estão completas com água"""
         for i in range(BOARD_SIZE):
             if self.get_value(i, col) == None:
-                self.insert(i, col, 'w')
+                self.set_value(i, col, 'w')
         return self
 
     @staticmethod
