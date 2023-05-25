@@ -295,6 +295,45 @@ class Board:
                 self.set_value(i, col, 'w')
         return self
 
+    """ -------------------- Validade (pode ser útil) ---------------------------- """
+    def is_valid(self):
+        row_pieces = 0
+        col_pieces = 0
+        for r in self.row:
+            row_pieces += r
+        for c in self.col:
+            col_pieces += c
+        return row_pieces == col_pieces
+
+    """--------------------------------------------------------------------------------"""
+
+    """ -------------------------- GOAL TEST functions ------------------------------------------ """
+
+    def get_remaining_pieces(self):
+        """ Obtém o número de peças que ainda faltam colocar
+        Esta implementação implica no final após ser encontrado o goal_test
+        caso seja necessário se coloque o resto das águas necessárias
+        """
+        pieces = 0
+        for r in self.row:
+            pieces += r
+        return pieces
+
+    def all_boats_places(self):
+        """ verifica se todos os barcos já foram colocados
+        Esta implementação implica que sempre que coloquemos um barco se verifique se completa um barco
+        e que se vá retirando o número de barcos a ser colocados no array de barcos.
+        """
+        for b in self.boats:
+            if b != 0:
+                return False
+        return True
+
+    """ -------------------------------------------------------------------------------------------- """
+
+
+
+
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -322,7 +361,6 @@ class Bimaru(Problem):
         """O construtor especifica o estado inicial."""
         state = BimaruState(board)
         super().__init__(state)
-        # TODO
         pass
 
     def actions(self, state: BimaruState):
@@ -343,8 +381,7 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        # TODO
-        pass
+        return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places()
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
