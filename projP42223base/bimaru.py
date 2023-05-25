@@ -43,7 +43,7 @@ class Board:
         self.col = col
         self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
-        self.boats = [1, 2, 3, 4]
+        self.boats = [4, 3, 2, 1]
         self.unknown_coord = []
         self.coord = []
 
@@ -61,11 +61,31 @@ class Board:
                     self.col[col] -= 1
                     self.coord.append((row, col))
                     self.coord.sort(key=lambda c: (c[0], c[1]))
-                
-                    if val == 'u':
+
+                    if val.lower() == 'c':
+                        self.circle_case(row, col)
+                        self.boats[0] -= 1
+
+                    elif val.lower() == 't':
+                        self.top_case(row, col)
+
+                    elif val.lower() == 'r':
+                        self.right_case(row, col)
+
+                    elif val.lower() == 'b':
+                        self.bottom_case(row, col)
+
+                    elif val.lower() == 'l':
+                        self.left_case(row, col)
+
+                    elif val.lower() == 'm':
+                        self.middle_case(row, col)
+
+                    else:
                         self.unknown_coord.append((row, col))
                 
                 self.board[row][col] = val
+            
             
             elif self.get_value(row, col).islower():
                 self.board[row][col] = val
@@ -81,25 +101,6 @@ class Board:
 
             self.set_value(r, c, v)
 
-        for hint in hints:
-            r = int(hint[0])
-            c = int(hint[1])
-            v = hint[2]
- 
-            if v.lower() == 'c':
-               self.circle_case(r, c)
-               self.boats[3] -= 1
-            if v.lower() == 't':
-                self.top_case(r, c)
-            if v.lower() == 'r':
-                self.right_case(r, c)
-            if v.lower() == 'b':
-                self.bottom_case(r, c)
-            if v.lower() == 'l':
-                self.left_case(r, c)
-            if v.lower() == 'm':
-                self.middle_case(r, c)
-            
         while(True):
             state = self.free_row[:]            
             self.fill_water()
@@ -123,7 +124,6 @@ class Board:
                     if self.get_value(row, i) == None:
                         self.set_value(row, i, 'u')
 
-        return self
 
     def circle_case(self, r: int, c: int):
         
@@ -135,8 +135,6 @@ class Board:
         self.set_value(r+1, c, 'w')
         self.set_value(r+1, c-1, 'w')
         self.set_value(r, c-1, 'w')
-
-        return self
 
     def top_case(self, r: int, c: int):
         
@@ -151,8 +149,6 @@ class Board:
         self.set_value(r+2, c+1, 'w')
         self.set_value(r+1, c, 'u')
 
-        return self
-
     def right_case(self, r: int, c: int):
         
         self.set_value(r-1, c-1, 'w')
@@ -165,8 +161,6 @@ class Board:
         self.set_value(r+1, c-2, 'w')
         self.set_value(r-1, c-2, 'w')
         self.set_value(r, c-1, 'u')
-
-        return self
     
     def bottom_case(self, r: int, c: int):
 
@@ -180,8 +174,6 @@ class Board:
         self.set_value(r, c-1, 'w')
         self.set_value(r-1, c-1, 'w')
         self.set_value(r-1, c, 'u')
-
-        return self
     
     def left_case(self, r: int, c: int):
         
@@ -196,8 +188,6 @@ class Board:
         self.set_value(r-1, c+2, 'w')
         self.set_value(r, c+1, 'u')
 
-        return self
-
     def middle_case(self, r: int, c: int):
 
         self.set_value(r - 1, c - 1, 'w')
@@ -205,9 +195,9 @@ class Board:
         self.set_value(r + 1, c + 1, 'w')
         self.set_value(r + 1, c - 1, 'w')
 
-        return self
 
-    def process_unknown(self):
+    def process_unknown(self, row: int, col: int):
+        
         pass
         #for coord in self.unknown_coord:
 
@@ -279,21 +269,18 @@ class Board:
                 self.fill_col(i)
             i += 1
 
-        return self
 
     def fill_row(self, row: int):
         """Preenche as linhas que já estão completas com água"""
         for i in range(BOARD_SIZE):
             if self.get_value(row, i) == None:
                 self.set_value(row, i, 'w')
-        return self
 
     def fill_col(self, col: int):
         """Preenche as colunas que já estão completas com água"""
         for i in range(BOARD_SIZE):
             if self.get_value(i, col) == None:
                 self.set_value(i, col, 'w')
-        return self
 
     """ -------------------- Validade (pode ser útil) ---------------------------- """
     def is_valid(self):
