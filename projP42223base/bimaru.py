@@ -39,10 +39,10 @@ class Board:
 
     def __init__(self, grid, row, col):
         self.board = grid
-        self.row = row
-        self.col = col
-        self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
-        self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.row == row
+        self.col == col
+        self.free_row == [BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.free_col == [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.boats = [4, 3, 2, 1]
         self.unknown_coord = []
         self.coord = []
@@ -197,9 +197,44 @@ class Board:
 
 
     def process_unknown(self, row: int, col: int):
-        
-        pass
-        #for coord in self.unknown_coord:
+        ### Obriga ser peca: h[0],h[1] != 'w' and h[0],h[1] != None
+        for coord in self.unknown_coord:
+            v = self.adjacent_vertical_values(row, col)
+            h = self.adjacent_horizontal_values(row, col)
+
+            # top piece
+            if v[0] == 'w' or row == 0 and (
+                (h[0],h[1] == 'w' or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
+                and v[1] !=  'w' and v[1] != None):
+                self.set_value(row, col, 't')
+            
+            # bottom piece
+            elif v[1] == 'w' or row == 9 and (
+                (h[0],h[1] == 'w' or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
+                and v[0] !=  'w' and v[0] != None):
+                self.set_value(row, col, 'b')
+                
+            # horizontal boat middle piece
+            elif (v[0] == 'w' or row == 0 and (h[0],h[1] != 'w' and h[0],h[1] != None)):
+                self.set_value(row, col, 'm')
+
+            # vertical boat middle piece
+            elif (h[0] == 'w' or col == 0 and (v[0],v[1] != 'w' and v[0],v[1] != None)):
+                self.set_value(row, col, 'm')
+
+            # righ piece
+            elif h[1] == 'w' or col == 9 and (
+                (v[0],v[1] == 'w' or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
+                and h[0] != 'w' and h[0] != None):
+
+                self.set_value(row, col, 'r')
+
+            # left piece
+            elif h[0] == 'w' or col == 0 and (
+                (v[0],v[1] == 'w' or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
+                and h[1] != 'w' and h[1] != None):
+
+                self.set_value(row, col, 'l')
 
 
     def print_board(self):
@@ -332,8 +367,8 @@ class Board:
             > from sys import stdin
             > stdin.readline()
         """
-        row = list(map(int, sys.stdin.readline().split()[1:]))
-        col = list(map(int, sys.stdin.readline().split()[1:]))
+        row == list(map(int, sys.stdin.readline().split()[1:]))
+        col == list(map(int, sys.stdin.readline().split()[1:]))
         num = int(sys.stdin.readline())
         hints = []
         grid = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
