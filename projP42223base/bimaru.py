@@ -45,7 +45,7 @@ class Board:
         self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.boats = [4, 3, 2, 1]
         self.unknown_coord = []
-        self.coord = []
+        self.coord_boats = []
 
     def set_value(self, row: int, col: int, val):
         """Insere peça no board e atualiza os espaços livres e o número de peças
@@ -59,12 +59,13 @@ class Board:
                 if val.lower() != 'w':
                     self.row[row] -= 1
                     self.col[col] -= 1
-                    self.coord.append((row, col))
-                    self.coord.sort(key=lambda c: (c[0], c[1]))
+                    self.coord_boats.append((row, col))
+                    self.coord_boats.sort(key=lambda c: (c[0], c[1]))
 
                     if val.lower() == 'c':
                         self.circle_case(row, col)
                         self.boats[0] -= 1
+                        self.coord_boats.remove((row, col))
 
                     elif val.lower() == 't':
                         self.top_case(row, col)
@@ -89,8 +90,38 @@ class Board:
             
             elif self.get_value(row, col).islower():
                 self.board[row][col] = val
+                
         
         return self
+
+    def count_boats(self):
+        c_b = self.coord_boats[:]
+        while(len(c_b) > 0):
+            length = 0
+            print(len(c_b), c_b)
+            coord = c_b[0]
+            h = self.adjacent_horizontal_values(coord[0], coord[1])
+            v = self.adjacent_vertical_values(coord[0], coord[1])
+            print("Adeus")
+            if self.get_value(coord[0], coord[1]).lower() == 't' or self.get_value(coord[0], coord[1]).lower() == 'l':
+                if v[1] != None and v[1] != 'w' and v[1] != 'W':
+                    while((coord[0] + length, coord[1]) in c_b):
+                        c_b.remove((coord[0]+length, coord[1]))
+                        length += 1
+                    if self.get_value(coord[0] + length - 1, coord[1]).lower() != 'b':
+                        print("OLA")
+                        continue
+
+                elif h[1] != None and h[1] != 'w' and h[1] != 'W':
+                    while((coord[0], coord[1] + length) in c_b):
+                        c_b.remove((coord[0], coord[1]+length))
+                        length += 1
+                    if self.get_value(coord[0], coord[1] + length - 1).lower() != 'r':
+                        continue
+            
+            length -= 1
+            self.boats[length] -= 1
+            return
 
     def calculate_state(self, hints):
         """Calcula o estado inicial do board."""
@@ -113,6 +144,8 @@ class Board:
             self.process_unknown()
             if state == len(self.unknown_coord):
                 break
+
+        self.count_boats()
 
         return self
 
@@ -243,6 +276,9 @@ class Board:
                 
                 self.set_value(row, col, 'c')
 
+                self.coord_boats.remove((row, col))
+                self.boats[0] -= 1
+
             # top piece
             elif ((v[0] == 'w' or row == 0) and (
                 ((h[0] == 'w' and h[1] == 'w') or 
@@ -290,12 +326,15 @@ class Board:
             self.unknown_coord.remove((row, col))
 
 
+
     def print_board(self):
         """Faz print do board no terminal."""
         print("(ROW) Peças:", self.row, " Livres:", self.free_row, '\n')
         print("(COL) Peças:", self.col, " Livres:", self.free_col, '\n')
-        print("(COR)", len(self.coord), self.coord, '\n')
+        print("(COR)", len(self.coord_boats), self.coord_boats, '\n')
         print("(UKN)", len(self.unknown_coord), self.unknown_coord, '\n')
+        print("(BTS)", self.boats, '\n')
+
         for i in range(10):
             for j in range(10):
                 if(self.get_value(i, j) == None):
