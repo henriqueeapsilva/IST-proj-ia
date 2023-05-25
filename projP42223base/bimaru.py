@@ -39,10 +39,10 @@ class Board:
 
     def __init__(self, grid, row, col):
         self.board = grid
-        self.row == row
-        self.col == col
-        self.free_row == [BOARD_SIZE for _ in range(BOARD_SIZE)]
-        self.free_col == [BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.row = row
+        self.col = col
+        self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.boats = [4, 3, 2, 1]
         self.unknown_coord = []
         self.coord = []
@@ -108,6 +108,12 @@ class Board:
             if state == self.free_row:
                 break
 
+        while(True):
+            state = len(self.unknown_coord[:])
+            self.process_unknown()
+            if state == len(self.unknown_coord):
+                break
+
         return self
 
     def fill_missing(self):
@@ -119,10 +125,19 @@ class Board:
                 for col in range(BOARD_SIZE):
                     if self.get_value(i, col) == None:
                         self.set_value(i, col, 'u')
+                        self.set_value(i-1, col-1, 'w')
+                        self.set_value(i-1, col+1, 'w')
+                        self.set_value(i+1, col+1, 'w')
+                        self.set_value(i+1, col-1, 'w')
+                        
             if self.col[i] != 0 and self.free_col[i] == self.col[i]:
                 for row in range(BOARD_SIZE):
                     if self.get_value(row, i) == None:
                         self.set_value(row, i, 'u')
+                        self.set_value(row-1, i-1, 'w')
+                        self.set_value(row-1, i+1, 'w')
+                        self.set_value(row+1, i+1, 'w')
+                        self.set_value(row+1, i-1, 'w')
 
 
     def circle_case(self, r: int, c: int):
@@ -196,45 +211,83 @@ class Board:
         self.set_value(r + 1, c - 1, 'w')
 
 
-    def process_unknown(self, row: int, col: int):
+    def process_unknown(self):
         ### Obriga ser peca: h[0],h[1] != 'w' and h[0],h[1] != None
         for coord in self.unknown_coord:
+            row = coord[0]
+            col = coord[1]
             v = self.adjacent_vertical_values(row, col)
             h = self.adjacent_horizontal_values(row, col)
 
+            v = tuple(element.lower() if element is not None else None for element in v)
+            h = tuple(element.lower() if element is not None else None for element in h)
+
+
+            #circle piece
+            if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w') or
+                (row == 0 and 
+                    ((col == 0 and v[1] == 'w' and h[1] == 'w') or 
+                    (col == 9 and v[1] == 'w' and h[0] == 'w') or 
+                    (h[0] == 'w' and h[1] == 'w' and v[1] == 'w'))) 
+                or
+                (row == 9 and 
+                    ((col == 9 and v[0] == 'w' and h[0] == 'w') or 
+                    (col == 0 and v[0] == 'w' and h[1] == 'w') or 
+                    (h[0] == 'w' and h[1] == 'w' and v[0] == 'w'))) 
+                or
+                (col == 0 and
+                    (v[0] == 'w' and v[1] == 'w' and h[1] == 'w'))
+                or
+                (col == 9 and
+                    (v[0] == 'w' and v[1] == 'w' and h[0] == 'w'))):
+                
+                self.set_value(row, col, 'c')
+
             # top piece
-            if v[0] == 'w' or row == 0 and (
-                (h[0],h[1] == 'w' or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
-                and v[1] !=  'w' and v[1] != None):
+            elif ((v[0] == 'w' or row == 0) and (
+                ((h[0] == 'w' and h[1] == 'w') or 
+                (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
+                and v[1] !=  'w' and v[1] != None or
+                (v[1] == 'm' or v[1] == 'M'))):
                 self.set_value(row, col, 't')
             
             # bottom piece
-            elif v[1] == 'w' or row == 9 and (
-                (h[0],h[1] == 'w' or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
-                and v[0] !=  'w' and v[0] != None):
+            elif ((v[1] == 'w' or row == 9) and (
+                ((h[0] == 'w' and h[1] == 'w') or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
+                and v[0] !=  'w' and v[0] != None or
+                (v[0] == 'm' or v[0] == 'M'))):
                 self.set_value(row, col, 'b')
                 
             # horizontal boat middle piece
-            elif (v[0] == 'w' or row == 0 and (h[0],h[1] != 'w' and h[0],h[1] != None)):
+            elif ((v[0] == 'w' or row == 0) 
+                and (h[0] != 'w' and h[1] != 'w' and h[0] != None and h[1] != None)):
                 self.set_value(row, col, 'm')
 
             # vertical boat middle piece
-            elif (h[0] == 'w' or col == 0 and (v[0],v[1] != 'w' and v[0],v[1] != None)):
+            elif ((h[0] == 'w' or col == 0) 
+                and (v[0] != 'w' and v[1] != 'w' and v[0] != None and v[1] != None)):
                 self.set_value(row, col, 'm')
 
             # righ piece
-            elif h[1] == 'w' or col == 9 and (
-                (v[0],v[1] == 'w' or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
-                and h[0] != 'w' and h[0] != None):
+            elif ((h[1] == 'w' or col == 9) and (
+                ((v[0] == 'w' and v[1] == 'w') or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
+                and h[0] != 'w' and h[0] != None) or 
+                (h[0] == 'm' or h[0] == 'M')):
 
                 self.set_value(row, col, 'r')
 
             # left piece
-            elif h[0] == 'w' or col == 0 and (
-                (v[0],v[1] == 'w' or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
-                and h[1] != 'w' and h[1] != None):
+            elif ((h[0] == 'w' or col == 0) and (
+                ((v[0] == 'w',v[1] == 'w') or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
+                and h[1] != 'w' and h[1] != None) or
+                (h[0] == 'm' or h[0] == 'M')):
 
                 self.set_value(row, col, 'l')
+
+            else:
+                continue
+
+            self.unknown_coord.remove((row, col))
 
 
     def print_board(self):
@@ -367,8 +420,8 @@ class Board:
             > from sys import stdin
             > stdin.readline()
         """
-        row == list(map(int, sys.stdin.readline().split()[1:]))
-        col == list(map(int, sys.stdin.readline().split()[1:]))
+        row = list(map(int, sys.stdin.readline().split()[1:]))
+        col = list(map(int, sys.stdin.readline().split()[1:]))
         num = int(sys.stdin.readline())
         hints = []
         grid = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
