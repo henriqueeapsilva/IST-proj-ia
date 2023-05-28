@@ -37,8 +37,8 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    def __init__(self, grid, row, col):
-        self.board = grid
+    def __init__(self, row, col):        
+        self.board = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
         self.row = row
         self.col = col
         self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
@@ -95,33 +95,38 @@ class Board:
         return self
 
     def count_boats(self):
-        c_b = self.coord_boats[:]
-        while(len(c_b) > 0):
+        i = 0
+        while(len(self.coord_boats) > i):
             length = 0
-            print(len(c_b), c_b)
-            coord = c_b[0]
-            h = self.adjacent_horizontal_values(coord[0], coord[1])
-            v = self.adjacent_vertical_values(coord[0], coord[1])
-            print("Adeus")
-            if self.get_value(coord[0], coord[1]).lower() == 't' or self.get_value(coord[0], coord[1]).lower() == 'l':
+            row = self.coord_boats[i][0]
+            col = self.coord_boats[i][1]
+            
+            h = self.adjacent_horizontal_values(row, col)
+            v = self.adjacent_vertical_values(row, col)
+            
+            if self.get_value(row, col).lower() == 't' or self.get_value(row, col).lower() == 'l':
+            
                 if v[1] != None and v[1] != 'w' and v[1] != 'W':
-                    while((coord[0] + length, coord[1]) in c_b):
-                        c_b.remove((coord[0]+length, coord[1]))
+                    while((row + length, col) in self.coord_boats):
+                        self.coord_boats.remove((row + length, col))
                         length += 1
-                    if self.get_value(coord[0] + length - 1, coord[1]).lower() != 'b':
-                        print("OLA")
+            
+                    if self.get_value(row + length - 1, col).lower() != 'b':
                         continue
 
                 elif h[1] != None and h[1] != 'w' and h[1] != 'W':
-                    while((coord[0], coord[1] + length) in c_b):
-                        c_b.remove((coord[0], coord[1]+length))
+                    while((row, col + length) in self.coord_boats):
+                        self.coord_boats.remove((row, col + length))
                         length += 1
-                    if self.get_value(coord[0], coord[1] + length - 1).lower() != 'r':
+                    
+                    if self.get_value(row, col + length - 1).lower() != 'r':
                         continue
             
-            length -= 1
-            self.boats[length] -= 1
-            return
+                length -= 1
+                self.boats[length] -= 1
+            
+            else:
+                i += 1
 
     def calculate_state(self, hints):
         """Calcula o estado inicial do board."""
@@ -135,7 +140,7 @@ class Board:
         while(True):
             state = self.free_row[:]            
             self.fill_water()
-            self.fill_missing()
+            self.fill_boats()
             if state == self.free_row:
                 break
 
@@ -149,7 +154,7 @@ class Board:
 
         return self
 
-    def fill_missing(self):
+    def fill_boats(self):
         """No caso em que os espaços livres numa linha (coluna) é igual ao
         número de peças de barcos que faltam nessa linha (coluna), essa linha
         (coluna) é preenchida com peças de barcos."""
@@ -257,67 +262,72 @@ class Board:
 
 
             #circle piece
-            if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w') or
-                (row == 0 and 
-                    ((col == 0 and v[1] == 'w' and h[1] == 'w') or 
-                    (col == 9 and v[1] == 'w' and h[0] == 'w') or 
-                    (h[0] == 'w' and h[1] == 'w' and v[1] == 'w'))) 
-                or
-                (row == 9 and 
-                    ((col == 9 and v[0] == 'w' and h[0] == 'w') or 
-                    (col == 0 and v[0] == 'w' and h[1] == 'w') or 
-                    (h[0] == 'w' and h[1] == 'w' and v[0] == 'w'))) 
-                or
-                (col == 0 and
-                    (v[0] == 'w' and v[1] == 'w' and h[1] == 'w'))
-                or
-                (col == 9 and
-                    (v[0] == 'w' and v[1] == 'w' and h[0] == 'w'))):
+            if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w') 
+                or (row == 0 and ((col == 0 and v[1] == 'w' and h[1] == 'w') 
+                    or (col == 9 and v[1] == 'w' and h[0] == 'w') 
+                    or (h[0] == 'w' and h[1] == 'w' and v[1] == 'w'))) 
                 
+                or (row == 9 and ((col == 9 and v[0] == 'w' and h[0] == 'w') 
+                    or (col == 0 and v[0] == 'w' and h[1] == 'w') 
+                    or (h[0] == 'w' and h[1] == 'w' and v[0] == 'w'))) 
+                
+                or (col == 0 and (v[0] == 'w' and v[1] == 'w' and h[1] == 'w'))
+                
+                or (col == 9 and (v[0] == 'w' and v[1] == 'w' and h[0] == 'w'))):
                 self.set_value(row, col, 'c')
-
                 self.coord_boats.remove((row, col))
                 self.boats[0] -= 1
 
             # top piece
-            elif ((v[0] == 'w' or row == 0) and (
-                ((h[0] == 'w' and h[1] == 'w') or 
-                (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
-                and v[1] !=  'w' and v[1] != None or
-                (v[1] == 'm' or v[1] == 'M'))):
+            elif ((v[0] == 'w' or row == 0) 
+                and (((h[0] == 'w' and h[1] == 'w') 
+                or (col == 0 and h[1] == 'w') 
+                or (col == 9 and h[0] == 'w')) 
+                and v[1] !=  'w' and v[1] != None 
+                or (v[1] == 'm' or v[1] == 'M'))):
                 self.set_value(row, col, 't')
             
             # bottom piece
-            elif ((v[1] == 'w' or row == 9) and (
-                ((h[0] == 'w' and h[1] == 'w') or (col == 0 and h[1] == 'w') or (col == 9 and h[0] == 'w'))
-                and v[0] !=  'w' and v[0] != None or
-                (v[0] == 'm' or v[0] == 'M'))):
+            elif ((v[1] == 'w' or row == 9) 
+                and (((h[0] == 'w' and h[1] == 'w') 
+                or (col == 0 and h[1] == 'w') 
+                or (col == 9 and h[0] == 'w'))
+                and v[0] !=  'w' and v[0] != None 
+                or (v[0] == 'm' or v[0] == 'M'))):
                 self.set_value(row, col, 'b')
                 
             # horizontal boat middle piece
             elif ((v[0] == 'w' or row == 0) 
-                and (h[0] != 'w' and h[1] != 'w' and h[0] != None and h[1] != None)):
+                and (h[0] != 'w' 
+                and h[1] != 'w' 
+                and h[0] != None 
+                and h[1] != None)):
                 self.set_value(row, col, 'm')
 
             # vertical boat middle piece
             elif ((h[0] == 'w' or col == 0) 
-                and (v[0] != 'w' and v[1] != 'w' and v[0] != None and v[1] != None)):
+                and (v[0] != 'w' 
+                and v[1] != 'w' 
+                and v[0] != None 
+                and v[1] != None)):
                 self.set_value(row, col, 'm')
 
             # righ piece
-            elif ((h[1] == 'w' or col == 9) and (
-                ((v[0] == 'w' and v[1] == 'w') or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
-                and h[0] != 'w' and h[0] != None) or 
-                (h[0] == 'm' or h[0] == 'M')):
-
+            elif ((h[1] == 'w' or col == 9) 
+                and (((v[0] == 'w' and v[1] == 'w') 
+                or (row == 0 and v[1] == 'w') 
+                or (row == 9 and v[0] == 'w')) 
+                and h[0] != 'w' and h[0] != None) 
+                or (h[0] == 'm' or h[0] == 'M')):
                 self.set_value(row, col, 'r')
 
             # left piece
-            elif ((h[0] == 'w' or col == 0) and (
-                ((v[0] == 'w',v[1] == 'w') or (row == 0 and v[1] == 'w') or (row == 9 and v[0] == 'w')) 
-                and h[1] != 'w' and h[1] != None) or
-                (h[0] == 'm' or h[0] == 'M')):
-
+            elif ((h[0] == 'w' or col == 0) 
+                and (((v[0] == 'w',v[1] == 'w') 
+                or (row == 0 and v[1] == 'w') 
+                or (row == 9 and v[0] == 'w')) 
+                and h[1] != 'w' and h[1] != None) 
+                or (h[0] == 'm' or h[0] == 'M')):
                 self.set_value(row, col, 'l')
 
             else:
@@ -446,8 +456,6 @@ class Board:
     """ -------------------------------------------------------------------------------------------- """
 
 
-
-
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
@@ -463,12 +471,10 @@ class Board:
         col = list(map(int, sys.stdin.readline().split()[1:]))
         num = int(sys.stdin.readline())
         hints = []
-        grid = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
         for _ in range(num):
             hints.append(tuple(sys.stdin.readline().split()[1:]))
-        return Board(grid, row, col).calculate_state(hints)
+        return Board(row, col).calculate_state(hints)
 
-    # TODO: outros metodos da classe
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
