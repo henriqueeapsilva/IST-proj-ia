@@ -51,7 +51,7 @@ class Board:
         """Insere peça no board e atualiza os espaços livres e o número de peças
         que cabem em cada linha e coluna."""
         if 0 <= row <= 9 and 0 <= col <= 9:
-            if self.get_value(row, col) == None:
+            if self.get_value(row, col) is None:
 
                 self.free_row[row] -= 1
                 self.free_col[col] -= 1
@@ -84,11 +84,11 @@ class Board:
 
                     else:
                         self.unknown_coord.append((row, col))
+                        self.unknown_coord.sort(key=lambda c: (c[0], c[1]))
                 
                 self.board[row][col] = val
             
-            
-            elif self.get_value(row, col).islower():
+            elif self.get_value(row, col) == 'u' or val.isupper():
                 self.board[row][col] = val
                 
         
@@ -96,7 +96,7 @@ class Board:
 
     def count_boats(self):
         i = 0
-        while(len(self.coord_boats) > i):
+        while len(self.coord_boats) > i:
             length = 0
             row = self.coord_boats[i][0]
             col = self.coord_boats[i][1]
@@ -106,16 +106,16 @@ class Board:
             
             if self.get_value(row, col).lower() == 't' or self.get_value(row, col).lower() == 'l':
             
-                if v[1] != None and v[1] != 'w' and v[1] != 'W':
-                    while((row + length, col) in self.coord_boats):
+                if v[1] is not None and v[1] != 'w' and v[1] != 'W':
+                    while (row + length, col) in self.coord_boats:
                         self.coord_boats.remove((row + length, col))
                         length += 1
             
                     if self.get_value(row + length - 1, col).lower() != 'b':
                         continue
 
-                elif h[1] != None and h[1] != 'w' and h[1] != 'W':
-                    while((row, col + length) in self.coord_boats):
+                elif h[1] is not None and h[1] != 'w' and h[1] != 'W':
+                    while (row, col + length) in self.coord_boats:
                         self.coord_boats.remove((row, col + length))
                         length += 1
                     
@@ -128,32 +128,6 @@ class Board:
             else:
                 i += 1
 
-    def calculate_state(self, hints):
-        """Calcula o estado inicial do board."""
-        for hint in hints:
-            r = int(hint[0])
-            c = int(hint[1])
-            v = hint[2]
-
-            self.set_value(r, c, v)
-
-        while(True):
-            state = self.free_row[:]            
-            self.fill_water()
-            self.fill_boats()
-            if state == self.free_row:
-                break
-
-        while(True):
-            state = len(self.unknown_coord[:])
-            self.process_unknown()
-            if state == len(self.unknown_coord):
-                break
-
-        self.count_boats()
-
-        return self
-
     def fill_boats(self):
         """No caso em que os espaços livres numa linha (coluna) é igual ao
         número de peças de barcos que faltam nessa linha (coluna), essa linha
@@ -161,7 +135,7 @@ class Board:
         for i in range(BOARD_SIZE):
             if self.row[i] != 0 and self.free_row[i] == self.row[i]:
                 for col in range(BOARD_SIZE):
-                    if self.get_value(i, col) == None:
+                    if self.get_value(i, col) is None:
                         self.set_value(i, col, 'u')
                         self.set_value(i-1, col-1, 'w')
                         self.set_value(i-1, col+1, 'w')
@@ -170,7 +144,7 @@ class Board:
                         
             if self.col[i] != 0 and self.free_col[i] == self.col[i]:
                 for row in range(BOARD_SIZE):
-                    if self.get_value(row, i) == None:
+                    if self.get_value(row, i) is None:
                         self.set_value(row, i, 'u')
                         self.set_value(row-1, i-1, 'w')
                         self.set_value(row-1, i+1, 'w')
@@ -262,80 +236,203 @@ class Board:
 
 
             #circle piece
-            if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w') 
-                or (row == 0 and ((col == 0 and v[1] == 'w' and h[1] == 'w') 
-                    or (col == 9 and v[1] == 'w' and h[0] == 'w') 
-                    or (h[0] == 'w' and h[1] == 'w' and v[1] == 'w'))) 
-                
-                or (row == 9 and ((col == 9 and v[0] == 'w' and h[0] == 'w') 
-                    or (col == 0 and v[0] == 'w' and h[1] == 'w') 
-                    or (h[0] == 'w' and h[1] == 'w' and v[0] == 'w'))) 
-                
+            if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w')
+                or (row == 0
+                    and ((col == 0 and v[1] == 'w' and h[1] == 'w')
+                    or (col == 9 and v[1] == 'w' and h[0] == 'w')
+                    or (h[0] == 'w' and h[1] == 'w' and v[1] == 'w')))
+
+                or (row == 9
+                    and ((col == 9 and v[0] == 'w' and h[0] == 'w')
+                    or (col == 0 and v[0] == 'w' and h[1] == 'w')
+                    or (h[0] == 'w' and h[1] == 'w' and v[0] == 'w')))
+
                 or (col == 0 and (v[0] == 'w' and v[1] == 'w' and h[1] == 'w'))
-                
+
                 or (col == 9 and (v[0] == 'w' and v[1] == 'w' and h[0] == 'w'))):
                 self.set_value(row, col, 'c')
                 self.coord_boats.remove((row, col))
                 self.boats[0] -= 1
+                self.unknown_coord.remove((row, col))
 
             # top piece
-            elif ((v[0] == 'w' or row == 0) 
-                and (((h[0] == 'w' and h[1] == 'w') 
-                or (col == 0 and h[1] == 'w') 
-                or (col == 9 and h[0] == 'w')) 
-                and v[1] !=  'w' and v[1] != None 
-                or (v[1] == 'm' or v[1] == 'M'))):
-                self.set_value(row, col, 't')
-            
-            # bottom piece
-            elif ((v[1] == 'w' or row == 9) 
-                and (((h[0] == 'w' and h[1] == 'w') 
-                or (col == 0 and h[1] == 'w') 
+            elif ((v[0] == 'w' or row == 0)
+                and (((h[0] == 'w' and h[1] == 'w')
+                or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                and v[0] !=  'w' and v[0] != None 
-                or (v[0] == 'm' or v[0] == 'M'))):
+                    and v[1] !=  'w' and v[1] is not None
+                    or (v[1] == 'm' or v[1] == 'M'))):
+                self.set_value(row, col, 't')
+                self.unknown_coord.remove((row, col))
+
+            # bottom piece
+            elif ((v[1] == 'w' or row == 9)
+                and (((h[0] == 'w' and h[1] == 'w')
+                or (col == 0 and h[1] == 'w')
+                or (col == 9 and h[0] == 'w'))
+                   and v[0] !=  'w' and v[0] is not None
+                   or (v[0] == 'm' or v[0] == 'M'))):
                 self.set_value(row, col, 'b')
-                
+                self.unknown_coord.remove((row, col))
+
             # horizontal boat middle piece
-            elif ((v[0] == 'w' or row == 0) 
-                and (h[0] != 'w' 
-                and h[1] != 'w' 
-                and h[0] != None 
-                and h[1] != None)):
+            elif ((v[0] == 'w' or row == 0)
+                and (h[0] != 'w'
+                and h[1] != 'w'
+                and h[0] is not None
+                and h[1] is not None)):
                 self.set_value(row, col, 'm')
+                self.unknown_coord.remove((row, col))
 
             # vertical boat middle piece
-            elif ((h[0] == 'w' or col == 0) 
-                and (v[0] != 'w' 
-                and v[1] != 'w' 
-                and v[0] != None 
-                and v[1] != None)):
+            elif ((h[0] == 'w' or col == 0)
+                and (v[0] != 'w'
+                and v[1] != 'w'
+                and v[0] is not None
+                and v[1] is not None)):
                 self.set_value(row, col, 'm')
+                self.unknown_coord.remove((row, col))
 
-            # righ piece
-            elif ((h[1] == 'w' or col == 9) 
-                and (((v[0] == 'w' and v[1] == 'w') 
-                or (row == 0 and v[1] == 'w') 
-                or (row == 9 and v[0] == 'w')) 
-                and h[0] != 'w' and h[0] != None) 
-                or (h[0] == 'm' or h[0] == 'M')):
+            # right piece
+            elif ((h[1] == 'w' or col == 9)
+                and (((v[0] == 'w' and v[1] == 'w')
+                or (row == 0 and v[1] == 'w')
+                or (row == 9 and v[0] == 'w'))
+                    and h[0] != 'w' and h[0] is not None)
+                    or (h[0] == 'm' or h[0] == 'M')):
                 self.set_value(row, col, 'r')
+                self.unknown_coord.remove((row, col))
 
             # left piece
-            elif ((h[0] == 'w' or col == 0) 
-                and (((v[0] == 'w',v[1] == 'w') 
-                or (row == 0 and v[1] == 'w') 
-                or (row == 9 and v[0] == 'w')) 
-                and h[1] != 'w' and h[1] != None) 
-                or (h[0] == 'm' or h[0] == 'M')):
+            elif ((h[0] == 'w' or col == 0)
+                and (((v[0] == 'w',v[1] == 'w')
+                or (row == 0 and v[1] == 'w')
+                or (row == 9 and v[0] == 'w'))
+                    and h[1] != 'w' and h[1] is not None)
+                    or (h[0] == 'm' or h[0] == 'M')):
                 self.set_value(row, col, 'l')
+                self.unknown_coord.remove((row, col))
 
             else:
                 continue
 
-            self.unknown_coord.remove((row, col))
+    def process_middle(self):
+        for coord in self.coord_boats:
+            row = coord[0]
+            col = coord[1]
+            if self.get_value(row, col).lower() == 'm':
+                v = self.adjacent_vertical_values(row, col)
+                h = self.adjacent_horizontal_values(row, col)
 
+                v = tuple(element.lower() if element is not None else None for element in v)
+                h = tuple(element.lower() if element is not None else None for element in h)
 
+                if v[0] == 'w' or v[1] == 'w' or row == 0 or row == 9:
+                    self.set_value(row, col - 1, 'u')
+                    self.set_value(row, col + 1, 'u')
+                    self.set_value(row - 1, col, 'w')
+                    self.set_value(row + 1, col, 'w')
+
+                if h[0] == 'w' or h[1] == 'w' or col == 0 or col == 9:
+                    self.set_value(row - 1, col, 'u')
+                    self.set_value(row + 1, col, 'u')
+                    self.set_value(row, col - 1, 'w')
+                    self.set_value(row, col + 1, 'w')
+
+    def calculate_actions(self):
+        length = 3
+        while length >= 0:
+            if self.boats[length] > 0:
+                break
+            length -= 1
+
+        if length < 0: return
+
+        actions = []
+        for row in range(BOARD_SIZE):
+            if self.free_row[row] > 0:
+                for col in range(BOARD_SIZE - length):
+                    if (self.get_value(row, col) != 'u'
+                        or self.get_value(row, col) != 'r'
+                        or self.get_value(row, col) != 'R'
+                        or self.get_value(row, col) is not None):
+                        continue
+
+                    for j in range(length-1, start=1):
+                        if (self.get_value(row, j) != 'u'
+                            or self.get_value(row, j) != 'm'
+                            or self.get_value(row, j) != 'M'
+                            or self.get_value(row, j) is not None):
+                            break_outer = True
+                            break
+
+                    if break_outer:
+                        break
+
+                    if (self.get_value(row, col + lenght) != 'u'
+                        or self.get_value(row, col + length) != 'l'
+                        or self.get_value(row, col + length) != 'L'
+                        or self.get_value(row, col + length) is not None):
+                        continue
+
+                    actions.append(((row, col),(row, col +length)))
+
+        for col in range(BOARD_SIZE):
+            if self.free_col[col] > 0:
+                for row in range(BOARD_SIZE - length):
+                    if (self.get_value(row, col) != 'u'
+                            or self.get_value(row, col) != 't'
+                            or self.get_value(row, col) != 'T'
+                            or self.get_value(row, col) is not None):
+                        continue
+
+                    for j in range(length - 1, start=1):
+                        if (self.get_value(row, j) != 'u'
+                                or self.get_value(j, col) != 'm'
+                                or self.get_value(j, col) != 'M'
+                                or self.get_value(j, col) is not None):
+                            break_outer = True
+                            break
+
+                    if break_outer:
+                        break
+
+                    if (self.get_value(row + length, col) != 'u'
+                            or self.get_value(row + length, col) != 'b'
+                            or self.get_value(row + length, col) != 'B'
+                            or self.get_value(row + length, col) is not None):
+                        continue
+
+                    actions.append(((row, col), (row + length, col)))
+
+        return actions
+
+    def calculate_state(self, hints):
+        """Calcula o estado inicial do board."""
+        for hint in hints:
+            r = int(hint[0])
+            c = int(hint[1])
+            v = hint[2]
+            self.set_value(r, c, v)
+
+        while True:
+            state = self.free_row[:]
+            self.fill_water()
+            self.fill_boats()
+            if state == self.free_row:
+                break
+
+        while True:
+            state = self.unknown_coord[:]
+            self.process_unknown()
+            self.process_middle()
+            if state == self.unknown_coord:
+                break
+
+        self.count_boats()
+        print(self.calculate_actions())
+
+        return self
 
     def print_board(self):
         """Faz print do board no terminal."""
@@ -347,7 +444,7 @@ class Board:
 
         for i in range(10):
             for j in range(10):
-                if(self.get_value(i, j) == None):
+                if self.get_value(i, j) is None:
                     sys.stdout.write('?')
                 else:
                     if self.get_value(i,j) == 'w':
@@ -364,12 +461,12 @@ class Board:
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.get_value(row-1, col), self.get_value(row+1, col))
+        return self.get_value(row - 1, col), self.get_value(row + 1, col)
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.get_value(row, col-1), self.get_value(row, col+1))
+        return self.get_value(row, col - 1), self.get_value(row, col + 1)
     
     def adjacent_diagonal_values(self, row: int, col: int) -> (str, str, str, str):
         """Devolve os valores que se encontram nas diagonais, começando pelo,
@@ -410,13 +507,13 @@ class Board:
     def fill_row(self, row: int):
         """Preenche as linhas que já estão completas com água"""
         for i in range(BOARD_SIZE):
-            if self.get_value(row, i) == None:
+            if self.get_value(row, i) is None:
                 self.set_value(row, i, 'w')
 
     def fill_col(self, col: int):
         """Preenche as colunas que já estão completas com água"""
         for i in range(BOARD_SIZE):
-            if self.get_value(i, col) == None:
+            if self.get_value(i, col) is None:
                 self.set_value(i, col, 'w')
 
     """ -------------------- Validade (pode ser útil) ---------------------------- """
