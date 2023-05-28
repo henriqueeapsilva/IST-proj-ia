@@ -352,57 +352,67 @@ class Board:
         for row in range(BOARD_SIZE):
             if self.free_row[row] > 0:
                 for col in range(BOARD_SIZE - length):
+                    print((row, col))
                     if (self.get_value(row, col) != 'u'
-                        or self.get_value(row, col) != 'r'
-                        or self.get_value(row, col) != 'R'
-                        or self.get_value(row, col) is not None):
+                        and self.get_value(row, col) != 'r'
+                        and self.get_value(row, col) != 'R'
+                        and self.get_value(row, col) is not None):
+                        print("primeira")
                         continue
 
-                    for j in range(length-1, start=1):
-                        if (self.get_value(row, j) != 'u'
-                            or self.get_value(row, j) != 'm'
-                            or self.get_value(row, j) != 'M'
-                            or self.get_value(row, j) is not None):
+                    break_outer = False
+
+                    for j in range(length-1):
+                        if (self.get_value(row, j+1) != 'u'
+                            and self.get_value(row, j+1) != 'm'
+                            and self.get_value(row, j+1) != 'M'
+                            and self.get_value(row, j+1) is not None):
+                            print("segunda")
                             break_outer = True
                             break
 
                     if break_outer:
-                        break
-
-                    if (self.get_value(row, col + lenght) != 'u'
-                        or self.get_value(row, col + length) != 'l'
-                        or self.get_value(row, col + length) != 'L'
-                        or self.get_value(row, col + length) is not None):
                         continue
 
+                    if (self.get_value(row, col + lenght) != 'u'
+                        and self.get_value(row, col + length) != 'l'
+                        and self.get_value(row, col + length) != 'L'
+                        and self.get_value(row, col + length) is not None):
+                        print("terceira")
+                        continue
+                    print("---------------")
                     actions.append(((row, col),(row, col +length)))
 
         for col in range(BOARD_SIZE):
             if self.free_col[col] > 0:
                 for row in range(BOARD_SIZE - length):
+                    print((row, col))
                     if (self.get_value(row, col) != 'u'
-                            or self.get_value(row, col) != 't'
-                            or self.get_value(row, col) != 'T'
-                            or self.get_value(row, col) is not None):
+                        and self.get_value(row, col) != 't'
+                        and self.get_value(row, col) != 'T'
+                        and self.get_value(row, col) is not None):
+                        print("primeiraaaaaa")
                         continue
 
-                    for j in range(length - 1, start=1):
-                        if (self.get_value(row, j) != 'u'
-                                or self.get_value(j, col) != 'm'
-                                or self.get_value(j, col) != 'M'
-                                or self.get_value(j, col) is not None):
+                    for j in range(length - 1):
+                        if (self.get_value(j+1, col) != 'u'
+                            and self.get_value(j+1, col) != 'm'
+                            and self.get_value(j+1, col) != 'M'
+                            and self.get_value(j+1, col) is not None):
+                            print("segundaaaa")
                             break_outer = True
                             break
 
                     if break_outer:
-                        break
-
-                    if (self.get_value(row + length, col) != 'u'
-                            or self.get_value(row + length, col) != 'b'
-                            or self.get_value(row + length, col) != 'B'
-                            or self.get_value(row + length, col) is not None):
                         continue
 
+                    if (self.get_value(row + length, col) != 'u'
+                        and self.get_value(row + length, col) != 'b'
+                        and self.get_value(row + length, col) != 'B'
+                        and self.get_value(row + length, col) is not None):
+                        print("terceiraaaa")
+                        continue
+                    print("---------------")
                     actions.append(((row, col), (row + length, col)))
 
         return actions
