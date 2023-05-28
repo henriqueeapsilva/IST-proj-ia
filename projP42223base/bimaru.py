@@ -41,6 +41,8 @@ class Board:
         self.board = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
         self.row = row
         self.col = col
+        self.hint_row = row[:]
+        self.hint_col = col[:]
         self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.boats = [4, 3, 2, 1]
@@ -83,15 +85,15 @@ class Board:
                         self.middle_case(row, col)
 
                     else:
+                        self.middle_case(row, col)
                         self.unknown_coord.append((row, col))
                         self.unknown_coord.sort(key=lambda c: (c[0], c[1]))
                 
                 self.board[row][col] = val
             
-            elif self.get_value(row, col) == 'u' or val.isupper():
+            elif val != 'w' and (self.get_value(row, col) == 'u' or val.isupper()):
                 self.board[row][col] = val
-                
-        
+
         return self
 
     def count_boats(self):
@@ -127,30 +129,6 @@ class Board:
             
             else:
                 i += 1
-
-    def fill_boats(self):
-        """No caso em que os espaços livres numa linha (coluna) é igual ao
-        número de peças de barcos que faltam nessa linha (coluna), essa linha
-        (coluna) é preenchida com peças de barcos."""
-        for i in range(BOARD_SIZE):
-            if self.row[i] != 0 and self.free_row[i] == self.row[i]:
-                for col in range(BOARD_SIZE):
-                    if self.get_value(i, col) is None:
-                        self.set_value(i, col, 'u')
-                        self.set_value(i-1, col-1, 'w')
-                        self.set_value(i-1, col+1, 'w')
-                        self.set_value(i+1, col+1, 'w')
-                        self.set_value(i+1, col-1, 'w')
-                        
-            if self.col[i] != 0 and self.free_col[i] == self.col[i]:
-                for row in range(BOARD_SIZE):
-                    if self.get_value(row, i) is None:
-                        self.set_value(row, i, 'u')
-                        self.set_value(row-1, i-1, 'w')
-                        self.set_value(row-1, i+1, 'w')
-                        self.set_value(row+1, i+1, 'w')
-                        self.set_value(row+1, i-1, 'w')
-
 
     def circle_case(self, r: int, c: int):
         
@@ -216,12 +194,11 @@ class Board:
         self.set_value(r, c+1, 'u')
 
     def middle_case(self, r: int, c: int):
-
+        """"Funciona para ambas as peças m e u."""
         self.set_value(r - 1, c - 1, 'w')
         self.set_value(r - 1, c + 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
         self.set_value(r + 1, c - 1, 'w')
-
 
     def process_unknown(self):
         ### Obriga ser peca: h[0],h[1] != 'w' and h[0],h[1] != None
@@ -346,74 +323,72 @@ class Board:
                 break
             length -= 1
 
-        if length < 0: return
-
         actions = []
-        for row in range(BOARD_SIZE):
-            if self.free_row[row] > 0:
-                for col in range(BOARD_SIZE - length):
-                    print((row, col))
-                    if (self.get_value(row, col) != 'u'
-                        and self.get_value(row, col) != 'r'
-                        and self.get_value(row, col) != 'R'
-                        and self.get_value(row, col) is not None):
-                        print("primeira")
-                        continue
+        if length > 1:
+            for row in range(BOARD_SIZE):
+                if self.hint_row[row] > length:
+                    for col in range(BOARD_SIZE - length):
+                        extra_pieces = 0
+                        x = self.get_value(row, col)
+                        # analisa a primeira coordenada
+                        if ((x != 'u' and x != 'r' and x != 'R' and x is not None)
+                                or (self.get_value(row-1, col) != 'w')):
+                            continue
 
-                    break_outer = False
+                        if x is None: extra_pieces += 1
 
-                    for j in range(length-1):
-                        if (self.get_value(row, j+1) != 'u'
-                            and self.get_value(row, j+1) != 'm'
-                            and self.get_value(row, j+1) != 'M'
-                            and self.get_value(row, j+1) is not None):
-                            print("segunda")
-                            break_outer = True
-                            break
+                        break_outer = False
 
-                    if break_outer:
-                        continue
+                        # analisa as coordenadas interiores
+                        for j in range(length):
+                            x = self.get_value(row, col+j+1)
+                            if x is None:
+                                extra_pieces += 1
+                                continue
+                            if x != 'u' and x != 'm' and x != 'M' and x is not None:
+                                break_outer = True
+                                break
 
-                    if (self.get_value(row, col + lenght) != 'u'
-                        and self.get_value(row, col + length) != 'l'
-                        and self.get_value(row, col + length) != 'L'
-                        and self.get_value(row, col + length) is not None):
-                        print("terceira")
-                        continue
-                    print("---------------")
-                    actions.append(((row, col),(row, col +length)))
+                        if break_outer:
+                            continue
+                        # analisa a ultima coordenada
+                        x = self.get_value(row, col + length)
+                        if x != 'u' and x != 'l' and x != 'L' and x is not None:
+                            continue
 
-        for col in range(BOARD_SIZE):
-            if self.free_col[col] > 0:
-                for row in range(BOARD_SIZE - length):
-                    print((row, col))
-                    if (self.get_value(row, col) != 'u'
-                        and self.get_value(row, col) != 't'
-                        and self.get_value(row, col) != 'T'
-                        and self.get_value(row, col) is not None):
-                        print("primeiraaaaaa")
-                        continue
+                        actions.append(((row, col),(row, col +length)))
 
-                    for j in range(length - 1):
-                        if (self.get_value(j+1, col) != 'u'
-                            and self.get_value(j+1, col) != 'm'
-                            and self.get_value(j+1, col) != 'M'
-                            and self.get_value(j+1, col) is not None):
-                            print("segundaaaa")
-                            break_outer = True
-                            break
+            for col in range(BOARD_SIZE):
+                if self.hint_col[col] > length:
+                    for row in range(BOARD_SIZE - length):
+                        x = self.get_value(row, col)
+                        if x != 'u' and x != 't' and x != 'T' and x is not None:
+                            continue
 
-                    if break_outer:
-                        continue
+                        break_outer = False
 
-                    if (self.get_value(row + length, col) != 'u'
-                        and self.get_value(row + length, col) != 'b'
-                        and self.get_value(row + length, col) != 'B'
-                        and self.get_value(row + length, col) is not None):
-                        print("terceiraaaa")
-                        continue
-                    print("---------------")
-                    actions.append(((row, col), (row + length, col)))
+                        for j in range(length):
+                            x = self.get_value(row+j+1, col)
+                            if x != 'u' and x != 'm' and x != 'M' and x is not None:
+                                break_outer = True
+                                break
+
+                        if break_outer:
+                            continue
+
+                        x = self.get_value(row + length, col)
+                        if x != 'u' and x != 'b' and x != 'B' and x is not None:
+                            continue
+
+                        actions.append(((row, col), (row + length, col)))
+        elif length == 1:
+            for row in range(BOARD_SIZE):
+                if self.free_row[row] > 0:
+                    for col in range(BOARD_SIZE - length):
+                        x = self.get_value(row, col)
+                return
+        elif length == 0:
+            return
 
         return actions
 
@@ -426,17 +401,12 @@ class Board:
             self.set_value(r, c, v)
 
         while True:
-            state = self.free_row[:]
+            state = self.free_row[:] + self.unknown_coord[:]
             self.fill_water()
             self.fill_boats()
-            if state == self.free_row:
-                break
-
-        while True:
-            state = self.unknown_coord[:]
             self.process_unknown()
             self.process_middle()
-            if state == self.unknown_coord:
+            if state == self.free_row + self.unknown_coord:
                 break
 
         self.count_boats()
@@ -499,32 +469,40 @@ class Board:
             self.get_value(row+1, col-1),
             self.get_value(row, col-1) 
         )
-    
+
+    def fill_boats(self):
+        """No caso em que os espaços livres numa linha (coluna) é igual ao
+        número de peças de barcos que faltam nessa linha (coluna), essa linha
+        (coluna) é preenchida com peças de barcos."""
+        for i in range(BOARD_SIZE):
+            if self.row[i] != 0 and self.free_row[i] == self.row[i]:
+                for col in range(BOARD_SIZE):
+                    if self.get_value(i, col) is None:
+                        self.set_value(i, col, 'u')
+                        self.set_value(i - 1, col - 1, 'w')
+                        self.set_value(i - 1, col + 1, 'w')
+                        self.set_value(i + 1, col + 1, 'w')
+                        self.set_value(i + 1, col - 1, 'w')
+
+            if self.col[i] != 0 and self.free_col[i] == self.col[i]:
+                for row in range(BOARD_SIZE):
+                    if self.get_value(row, i) is None:
+                        self.set_value(row, i, 'u')
+                        self.set_value(row - 1, i - 1, 'w')
+                        self.set_value(row - 1, i + 1, 'w')
+                        self.set_value(row + 1, i + 1, 'w')
+                        self.set_value(row + 1, i - 1, 'w')
+
     def fill_water(self):
-        i = 0
-        for j in self.row:
-            if j == 0:
-                self.fill_row(i)
-            i += 1
+        for row, val in enumerate(self.row):
+            if val == 0:
+                for col in range(BOARD_SIZE):
+                    self.set_value(row, col, 'w')
 
-        i = 0
-        for j in self.col:
-            if j == 0:
-                self.fill_col(i)
-            i += 1
-
-
-    def fill_row(self, row: int):
-        """Preenche as linhas que já estão completas com água"""
-        for i in range(BOARD_SIZE):
-            if self.get_value(row, i) is None:
-                self.set_value(row, i, 'w')
-
-    def fill_col(self, col: int):
-        """Preenche as colunas que já estão completas com água"""
-        for i in range(BOARD_SIZE):
-            if self.get_value(i, col) is None:
-                self.set_value(i, col, 'w')
+        for col, val in enumerate(self.col):
+            if val == 0:
+                for row in range(BOARD_SIZE):
+                    self.set_value(row, col, 'w')
 
     """ -------------------- Validade (pode ser útil) ---------------------------- """
     def is_valid(self):
