@@ -417,7 +417,6 @@ class Board:
                 break
 
         self.count_boats()
-        print(self.calculate_actions())
 
         return self
 
@@ -581,8 +580,6 @@ class Board:
                 break
 
         new_board.count_boats()
-        print(action)
-        print(new_board)
 
         return new_board
 
@@ -675,9 +672,6 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        print(state.board.is_valid())
-        print(state.board.get_remaining_pieces())
-        print(state.board.all_boats_places())
         return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places()
 
     def h(self, node: Node):
