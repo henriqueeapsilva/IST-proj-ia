@@ -19,6 +19,9 @@ from search import (
 )
 
 BOARD_SIZE = 10
+ROW_HINTS = []
+COL_HINTS = []
+PIECES = ('t', 'T', 'b', 'B', 'r', 'R', 'l', 'L', 'u')
 
 class BimaruState:
     state_id = 0
@@ -37,7 +40,7 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    def __init__(self, row, col):        
+    def __init__(self, row, col):
         self.board = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
         self.row = row
         self.col = col
@@ -97,6 +100,8 @@ class Board:
         return self
 
     def count_boats(self):
+        ### TODO: ESTA MAL, ISTO FODE TUDO,
+        ### TODO: ARRANJAR FORMA MELHOR QUE NAO ELIMINE AS COORD???
         i = 0
         while len(self.coord_boats) > i:
             length = 0
@@ -317,6 +322,8 @@ class Board:
                     self.set_value(row, col + 1, 'w')
 
     def calculate_actions(self):
+        ### TODO: ESTA MAL LENGTH - 1 NOS MEIOS DEVERIA SER A FORMA CORRETA
+        ### TODO: PROVAVELMENTE count_boats ESTA A FODER ISTO
         length = 3
         while length >= 0:
             if self.boats[length] > 0:
@@ -324,23 +331,25 @@ class Board:
             length -= 1
 
         actions = []
+        print(self.boats)
         if length > 1:
             for row in range(BOARD_SIZE):
                 if self.hint_row[row] > length:
                     for col in range(BOARD_SIZE - length):
                         x = self.get_value(row, col)
                         # analisa a primeira coordenada
-                        if ((x != 'u' and x != 'r' and x != 'R' and x is not None)
-                                or (self.get_value(row-1, col) != 'w')):
+                        if ((x != 'u' and x != 'l' and x != 'L' and x is not None)
+                        or (self.adjacent_values_left(row, col) in PIECES)):
                             continue
-
 
                         break_outer = False
 
                         # analisa as coordenadas interiores
                         for j in range(length):
-                            x = self.get_value(row, col+j+1)
-                            if x != 'u' and x != 'm' and x != 'M' and x is not None:
+                            x = self.get_value(row, col + j + 1)
+                            print(x)
+                            if ((x != 'u' and x != 'm' and x != 'M' and x is not None)
+                            or (self.adjacent_vertical_values(row, col + j + 1) in PIECES)):
                                 break_outer = True
                                 break
 
@@ -348,23 +357,27 @@ class Board:
                             continue
                         # analisa a ultima coordenada
                         x = self.get_value(row, col + length)
-                        if x != 'u' and x != 'l' and x != 'L' and x is not None:
+                        if ((x != 'u' and x != 'r' and x != 'R' and x is not None)
+                        or (self.adjacent_values_right(row, col + length) in PIECES)):
                             continue
 
-                        actions.append(((row, col),(row, col +length)))
+                        actions.append(((row, col),(row, col + length)))
 
             for col in range(BOARD_SIZE):
                 if self.hint_col[col] > length:
                     for row in range(BOARD_SIZE - length):
                         x = self.get_value(row, col)
-                        if x != 'u' and x != 't' and x != 'T' and x is not None:
+                        if ((x != 'u' and x != 't' and x != 'T' and x is not None)
+                        or (self.adjacent_values_top(row, col) in PIECES)):
                             continue
 
                         break_outer = False
 
+                        print(length)
                         for j in range(length):
                             x = self.get_value(row+j+1, col)
-                            if x != 'u' and x != 'm' and x != 'M' and x is not None:
+                            if ((x != 'u' and x != 'm' and x != 'M' and x is not None)
+                            or (self.adjacent_horizontal_values(row+j+1, col) in PIECES)):
                                 break_outer = True
                                 break
 
@@ -372,10 +385,12 @@ class Board:
                             continue
 
                         x = self.get_value(row + length, col)
-                        if x != 'u' and x != 'b' and x != 'B' and x is not None:
+                        if ((x != 'u' and x != 'b' and x != 'B' and x is not None)
+                        or (self.adjacent_values_bottom(row + length, col) in PIECES)):
                             continue
 
                         actions.append(((row, col), (row + length, col)))
+
         elif length == 1:
             for row in range(BOARD_SIZE):
                 if self.hint_row[row] > 0:
@@ -397,6 +412,8 @@ class Board:
 
                         actions.append(((row, col), (row + length, col)))
 
+        print(self.boats)
+        print(self)
         return actions
 
     def calculate_state(self, hints):
@@ -466,27 +483,45 @@ class Board:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
         return self.get_value(row, col - 1), self.get_value(row, col + 1)
-    
-    def adjacent_diagonal_values(self, row: int, col: int) -> (str, str, str, str):
-        """Devolve os valores que se encontram nas diagonais, começando pelo,
-        canto superior esquerdo, seguindo os ponteiros do relógio."""
-        return (
-            self.get_value(row-1, col-1), 
-            self.get_value(row-1, col+1),
-            self.get_value(row+1, col+1),
-            self.get_value(row+1, col-1))
-    
-    def adjacent_values(self, row: int, col: int) -> (str, str, str, str, str, str, str, str):
+
+    def adjacent_values_left(self, row: int, col: int) -> (str, str, str, str, str):
         """Devolve os valores à volta da coordenada"""
         return (
+            self.get_value(row-1, col),
             self.get_value(row-1, col-1),
-            self.get_value(row-1, col), 
+            self.get_value(row, col-1),
+            self.get_value(row+1, col-1),
+            self.get_value(row+1, col)
+        )
+
+    def adjacent_values_right(self, row: int, col: int) -> (str, str, str, str, str):
+        """Devolve os valores à volta da coordenada"""
+        return (
+            self.get_value(row-1, col),
             self.get_value(row-1, col+1),
+            self.get_value(row, col+1),
+            self.get_value(row-1, col+1),
+            self.get_value(row-1, col)
+        )
+
+    def adjacent_values_top(self, row: int, col: int) -> (str, str, str, str, str):
+        """Devolve os valores à volta da coordenada"""
+        return (
+            self.get_value(row, col-1),
+            self.get_value(row-1, col-1),
+            self.get_value(row-1, col),
+            self.get_value(row-1, col+1),
+            self.get_value(row, col+1)
+        )
+
+    def adjacent_values_bottom(self, row: int, col: int) -> (str, str, str, str, str):
+        """Devolve os valores à volta da coordenada"""
+        return (
             self.get_value(row, col+1),
             self.get_value(row+1, col+1),
             self.get_value(row+1, col),
             self.get_value(row+1, col-1),
-            self.get_value(row, col-1) 
+            self.get_value(row, col-1)
         )
 
     def fill_boats(self):
@@ -579,6 +614,8 @@ class Board:
             if state == new_board.free_row + new_board.unknown_coord:
                 break
 
+#        print(action)
+#        print(new_board)
         new_board.count_boats()
 
         return new_board
@@ -619,10 +656,6 @@ class Board:
             if b != 0:
                 return False
         return True
-
-
-
-
 
     """ -------------------------------------------------------------------------------------------- """
 
