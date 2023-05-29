@@ -378,12 +378,24 @@ class Board:
                         actions.append(((row, col), (row + length, col)))
         elif length == 1:
             for row in range(BOARD_SIZE):
-                if self.free_row[row] > 0:
+                if self.hint_row[row] > 0:
                     for col in range(BOARD_SIZE - length):
                         x = self.get_value(row, col)
-                return
-        elif length == 0:
-            return
+                        y = self.get_value(row, col + 1)
+                        if ((x != 'u' and x != 'l' and x != 'L' and x is not None) and (y != 'u' and y != 'r' and y != 'R' and y is not None)):
+                            continue
+
+                        actions.append(((row, col),(row, col + length)))
+
+            for col in range(BOARD_SIZE):
+                if self.hint_col[col] > 0:
+                    for row in range(BOARD_SIZE - length):
+                        x = self.get_value(row, col)
+                        y = self.get_value(row + 1, col)
+                        if ((x != 'u' and x != 't' and x != 'T' and x is not None) and (y != 'u' and y != 'b' and y != 'B' and y is not None)):
+                            continue
+
+                        actions.append(((row, col), (row + length, col)))
 
         return actions
 
@@ -409,9 +421,8 @@ class Board:
 
         return self
 
-    def __repr__(self):
+    def print_board(self):
         """Faz print do board no terminal."""
-        board_res = ""
         print("(ROW) Peças:", self.row, " Livres:", self.free_row, '\n')
         print("(COL) Peças:", self.col, " Livres:", self.free_col, '\n')
         print("(COR)", len(self.coord_boats), self.coord_boats, '\n')
@@ -419,9 +430,6 @@ class Board:
         print("(BTS)", self.boats, '\n')
 
         for i in range(10):
-            board_res += self.board[i]
-            board_res += '\n'
-            print(board_res)
             for j in range(10):
                 if self.get_value(i, j) is None:
                     sys.stdout.write('?')
@@ -431,7 +439,19 @@ class Board:
                     else:
                         sys.stdout.write(self.board[i][j])
             sys.stdout.write('\n')
-        return board_res
+
+    def __repr__(self):
+        grid = ""
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                x = self.get_value(row, col)
+                if x == 'w':
+                    x = '.'
+                elif x is None:
+                    x = '?'
+                grid += x
+            grid += '\n'
+        return grid
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -511,6 +531,14 @@ class Board:
         new_row = self.row[:]
         new_col = self.col[:]
         new_board = Board(new_row, new_col)
+        new_board.board = self.board[:][:]
+        new_board.free_row = self.free_row[:]
+        new_board.free_col = self.free_col[:]
+        new_board.boats = self.boats[:]
+        new_board.unknown_coord = self.unknown_coord[:]
+        new_board.coord_boats = self.coord_boats[:]
+        new_board.hint_row = self.hint_row[:]
+        new_board.hint_col = self.hint_col[:]
 
         if horizontal == vertical:
             new_board.set_value(action[0][0], action[0][1], 'c')
@@ -552,14 +580,9 @@ class Board:
             if state == new_board.free_row + new_board.unknown_coord:
                 break
 
-        new_board.board = self.board[:][:]
-        new_board.free_row = self.free_row[:]
-        new_board.free_col = self.free_col[:]
-        new_board.boats = self.boats[:]
-        new_board.unknown_coord = self.unknown_coord[:]
-        new_board.coord_boats = self.coord_boats[:]
-        new_board.hint_row = self.hint_row[:]
-        new_board.hint_col = self.hint_col[:]
+        new_board.count_boats()
+        print(action)
+        print(new_board)
 
         return new_board
 
@@ -646,13 +669,15 @@ class Bimaru(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-
         return BimaruState(state.board.execute_action(action))
 
     def goal_test(self, state: BimaruState):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
+        print(state.board.is_valid())
+        print(state.board.get_remaining_pieces())
+        print(state.board.all_boats_places())
         return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places()
 
     def h(self, node: Node):
