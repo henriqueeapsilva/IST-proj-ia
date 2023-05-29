@@ -328,23 +328,18 @@ class Board:
             for row in range(BOARD_SIZE):
                 if self.hint_row[row] > length:
                     for col in range(BOARD_SIZE - length):
-                        extra_pieces = 0
                         x = self.get_value(row, col)
                         # analisa a primeira coordenada
                         if ((x != 'u' and x != 'r' and x != 'R' and x is not None)
                                 or (self.get_value(row-1, col) != 'w')):
                             continue
 
-                        if x is None: extra_pieces += 1
 
                         break_outer = False
 
                         # analisa as coordenadas interiores
                         for j in range(length):
                             x = self.get_value(row, col+j+1)
-                            if x is None:
-                                extra_pieces += 1
-                                continue
                             if x != 'u' and x != 'm' and x != 'M' and x is not None:
                                 break_outer = True
                                 break
@@ -414,8 +409,9 @@ class Board:
 
         return self
 
-    def print_board(self):
+    def __repr__(self):
         """Faz print do board no terminal."""
+        board_res = ""
         print("(ROW) Peças:", self.row, " Livres:", self.free_row, '\n')
         print("(COL) Peças:", self.col, " Livres:", self.free_col, '\n')
         print("(COR)", len(self.coord_boats), self.coord_boats, '\n')
@@ -423,6 +419,9 @@ class Board:
         print("(BTS)", self.boats, '\n')
 
         for i in range(10):
+            board_res += self.board[i]
+            board_res += '\n'
+            print(board_res)
             for j in range(10):
                 if self.get_value(i, j) is None:
                     sys.stdout.write('?')
@@ -432,6 +431,7 @@ class Board:
                     else:
                         sys.stdout.write(self.board[i][j])
             sys.stdout.write('\n')
+        return board_res
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -504,6 +504,68 @@ class Board:
                 for row in range(BOARD_SIZE):
                     self.set_value(row, col, 'w')
 
+    def execute_action(self, action: list):
+        horizontal = action[1][0] - action[0][0]
+        vertical = action[1][1] - action[0][1]
+
+        new_row = self.row[:]
+        new_col = self.col[:]
+        new_board = Board(new_row, new_col)
+
+        if horizontal == vertical:
+            new_board.set_value(action[0][0], action[0][1], 'c')
+
+        elif horizontal == 0:
+            if vertical == 1:
+                new_board.set_value(action[0][0], action[0][1], 'l')
+                new_board.set_value(action[1][0], action[1][1], 'r')
+            elif vertical == 2:
+                new_board.set_value(action[0][0], action[0][1], 'l')
+                new_board.set_value(action[0][0], action[0][1] + 1, 'm')
+                new_board.set_value(action[1][0], action[1][1], 'r')
+            elif vertical == 3:
+                new_board.set_value(action[0][0], action[0][1], 'l')
+                new_board.set_value(action[0][0], action[0][1] + 1, 'm')
+                new_board.set_value(action[0][0], action[0][1] + 2, 'm')
+                new_board.set_value(action[1][0], action[1][1], 'r')
+
+        elif vertical == 0:
+            if horizontal == 1:
+                new_board.set_value(action[0][0], action[0][1], 't')
+                new_board.set_value(action[1][0], action[1][1], 'b')
+            elif horizontal == 2:
+                new_board.set_value(action[0][0], action[0][1], 't')
+                new_board.set_value(action[0][0] + 1, action[0][1], 'm')
+                new_board.set_value(action[1][0], action[1][1], 'b')
+            elif horizontal == 3:
+                new_board.set_value(action[0][0], action[0][1], 't')
+                new_board.set_value(action[0][0] + 1, action[0][1], 'm')
+                new_board.set_value(action[0][0] + 2, action[0][1], 'm')
+                new_board.set_value(action[1][0], action[1][1], 'b')
+
+        while True:
+            state = new_board.free_row[:] + new_board.unknown_coord[:]
+            new_board.fill_water()
+            new_board.fill_boats()
+            new_board.process_unknown()
+            new_board.process_middle()
+            if state == new_board.free_row + new_board.unknown_coord:
+                break
+
+        new_board.board = self.board[:][:]
+        new_board.free_row = self.free_row[:]
+        new_board.free_col = self.free_col[:]
+        new_board.boats = self.boats[:]
+        new_board.unknown_coord = self.unknown_coord[:]
+        new_board.coord_boats = self.coord_boats[:]
+        new_board.hint_row = self.hint_row[:]
+        new_board.hint_col = self.hint_col[:]
+
+        return new_board
+
+
+
+
     """ -------------------- Validade (pode ser útil) ---------------------------- """
     def is_valid(self):
         row_pieces = 0
@@ -538,6 +600,10 @@ class Board:
                 return False
         return True
 
+
+
+
+
     """ -------------------------------------------------------------------------------------------- """
 
 
@@ -570,17 +636,18 @@ class Bimaru(Problem):
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
-        # TODO
         partir do estado passado como argumento."""
-        pass
+        if not state.board.is_valid():
+            return []
+        return state.board.calculate_actions()
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state)."""
-        # TODO
-        pass
+
+        return BimaruState(state.board.execute_action(action))
 
     def goal_test(self, state: BimaruState):
         """Retorna True se e só se o estado passado como argumento é
@@ -604,4 +671,5 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
     bimaru = Bimaru(board)
-    Board.print_board(board)
+    goal_node = depth_first_tree_search(bimaru)
+    print(goal_node.state.board)
