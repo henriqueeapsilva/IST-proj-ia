@@ -74,7 +74,6 @@ class Board:
 
         return self
 
-
     def set_value(self, row: int, col: int, val):
         """Insere peça no board e atualiza os espaços livres e o número de peças
         que cabem em cada linha e coluna."""
@@ -138,6 +137,9 @@ class Board:
                     while (row + length, col) in self.coord_boats:
                         print((row+length, col), length)
                         length += 1
+                    if length > 4:
+                        self.invalid = True
+                        break
 
                     if self.get_value(row + length-1, col).lower() == 'b':
                         self.boats[length-1] -= 1
@@ -145,21 +147,25 @@ class Board:
                             self.coord_boats.remove((row + length-1, col))
                             length -= 1
                     else:
-                        print("NO")
+                        i += 1
                         continue
 
                 elif h[1] is not None and h[1] != 'w' and h[1] != 'W':
                     while (row, col + length) in self.coord_boats:
                         print((row, col+length), length)
                         length += 1
+                    if length > 4:
+                        self.invalid = True
+                        break
                     
                     if self.get_value(row, col + length - 1).lower() == 'r':
+                        print(length)
                         self.boats[length - 1] -= 1
                         while length > 0:
                             self.coord_boats.remove((row, col + length- 1))
                             length -= 1
                     else:
-                        print("NO2")
+                        i += 1
                         continue
 
             else:
@@ -272,8 +278,7 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                    and v[1] !=  'w' and v[1] is not None
-                    or (v[1] == 'm' or v[1] == 'M'))):
+                and v[1] !=  'w' and v[1] is not None)):
                 self.set_value(row, col, 't')
                 self.unknown_coord.remove((row, col))
 
@@ -282,8 +287,7 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                   and v[0] !=  'w' and v[0] is not None
-                   or (v[0] == 'm' or v[0] == 'M'))):
+                and v[0] !=  'w' and v[0] is not None)):
                 self.set_value(row, col, 'b')
                 self.unknown_coord.remove((row, col))
 
@@ -310,8 +314,7 @@ class Board:
                 and (((v[0] == 'w' and v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                    and h[0] != 'w' and h[0] is not None)
-                    or (h[0] == 'm' or h[0] == 'M')):
+                and h[0] != 'w' and h[0] is not None)):
                 self.set_value(row, col, 'r')
                 self.unknown_coord.remove((row, col))
 
@@ -320,8 +323,7 @@ class Board:
                 and (((v[0] == 'w',v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                    and h[1] != 'w' and h[1] is not None)
-                    or (h[0] == 'm' or h[0] == 'M')):
+                and h[1] != 'w' and h[1] is not None)):
                 self.set_value(row, col, 'l')
                 self.unknown_coord.remove((row, col))
 
@@ -464,7 +466,6 @@ class Board:
                     else:
                         sys.stdout.write(self.board[i][j])
             sys.stdout.write('\n')
-
 
     def __repr__(self):
         grid = ""
@@ -620,12 +621,12 @@ class Board:
             if state == new_board.free_row + new_board.unknown_coord:
                 break
 
-
-        new_board.count_boats()
         print("-----ACTION_TAKEN-----")
         print("(ACT)",action)
-        print(new_board)
+        new_board.print_board()
         print("-----ACTION_FINISHED-----")
+
+        new_board.count_boats()
 
         return new_board
 
@@ -636,7 +637,9 @@ class Board:
         col_pieces = 0
         for r in self.row:
             row_pieces += r
+            if r < 0: return False
         for c in self.col:
+            if c < 0: return False
             col_pieces += c
         return row_pieces == col_pieces
 
@@ -709,7 +712,7 @@ class Bimaru(Problem):
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        if not state.board.is_valid():
+        if not state.board.is_valid() or state.board.invalid:
             return []
         return state.board.calculate_actions()
 
@@ -756,5 +759,6 @@ if __name__ == "__main__":
     bimaru = Bimaru(board)
     board.print_board()
     print("««««««««««««««")
+    print()
     goal_node = depth_first_tree_search(bimaru)
     print(goal_node.state.board)
