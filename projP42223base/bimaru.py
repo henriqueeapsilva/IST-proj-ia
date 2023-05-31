@@ -135,7 +135,6 @@ class Board:
             
                 if v[1] is not None and v[1] != 'w' and v[1] != 'W':
                     while (row + length, col) in self.coord_boats:
-                        print((row+length, col), length)
                         length += 1
                     if length > 4:
                         self.invalid = True
@@ -152,14 +151,12 @@ class Board:
 
                 elif h[1] is not None and h[1] != 'w' and h[1] != 'W':
                     while (row, col + length) in self.coord_boats:
-                        print((row, col+length), length)
                         length += 1
                     if length > 4:
                         self.invalid = True
                         break
                     
                     if self.get_value(row, col + length - 1).lower() == 'r':
-                        print(length)
                         self.boats[length - 1] -= 1
                         while length > 0:
                             self.coord_boats.remove((row, col + length- 1))
@@ -365,11 +362,14 @@ class Board:
             for row in range(BOARD_SIZE):
                 if ROW_HINTS[row] > length and self.free_row[row] > 0:
                     for col in range(BOARD_SIZE - length):
+                        extra_pieces = 0
                         x = self.get_value(row, col)
                         # analisa a primeira coordenada
                         if ((x != 'u' and x != 'l' and x != 'L' and x is not None)
                         or (self.adjacent_values_left(row, col) in PIECES)):
                             continue
+
+                        if x is None: extra_pieces += 1
 
                         break_outer = False
 
@@ -380,6 +380,7 @@ class Board:
                             or (self.adjacent_vertical_values(row, col + j + 1) in PIECES)):
                                 break_outer = True
                                 break
+                            if x is None: extra_pieces += 1
 
                         if break_outer:
                             continue
@@ -389,15 +390,38 @@ class Board:
                         or (self.adjacent_values_right(row, col + length) in PIECES)):
                             continue
 
+                        if x is None: extra_pieces += 1
+
+                        if extra_pieces > self.row[row]:
+                            continue
+
+                        if length == 3:
+                            if((self.get_value(row,col) == 'l' or self.get_value(row,col) == 'L')
+                            and (self.get_value(row,col+1) == 'm' or self.get_value(row,col+1) == 'M')
+                            and (self.get_value(row,col+2) == 'm' or self.get_value(row,col+2) == 'M')
+                            and (self.get_value(row ,col+3) == 'r' or self.get_value(row,col+3) == 'R')):
+                                continue
+
+                        if length == 2:
+                            if ((self.get_value(row, col) == 'l' or self.get_value(row, col) == 'L')
+                            and (self.get_value(row,col+1) == 'm' or self.get_value(row,col+1) == 'M')
+                            and (self.get_value(row, col+2) == 'r' or self.get_value(row,col+2) == 'R')):
+                                continue
+
+
                         actions.append(((row, col),(row, col + length)))
 
             for col in range(BOARD_SIZE):
                 if COL_HINTS[col] > length and self.free_col[col] > 0:
                     for row in range(BOARD_SIZE - length):
+                        extra_pieces = 0
+
                         x = self.get_value(row, col)
                         if ((x != 'u' and x != 't' and x != 'T' and x is not None)
                         or (self.adjacent_values_top(row, col) in PIECES)):
                             continue
+
+                        if x is None: extra_pieces += 1
 
                         break_outer = False
 
@@ -408,6 +432,8 @@ class Board:
                                 break_outer = True
                                 break
 
+                            if x is None: extra_pieces += 1
+
                         if break_outer:
                             continue
 
@@ -415,6 +441,24 @@ class Board:
                         if ((x != 'u' and x != 'b' and x != 'B' and x is not None)
                         or (self.adjacent_values_bottom(row + length, col) in PIECES)):
                             continue
+
+                        if x is None: extra_pieces += 1
+
+                        if extra_pieces > self.col[col]:
+                            continue
+
+                        if length == 3:
+                            if((self.get_value(row,col) == 't' or self.get_value(row,col) == 'T')
+                            and (self.get_value(row + 1,col) == 'm' or self.get_value(row + 1,col) == 'M')
+                            and (self.get_value(row+2,col) == 'm' or self.get_value(row+2,col) == 'M')
+                            and (self.get_value(row+3 ,col) == 'b' or self.get_value(row+3,col) == 'B')):
+                                continue
+
+                        if length == 2:
+                            if ((self.get_value(row, col) == 't' or self.get_value(row, col) == 'T')
+                            and (self.get_value(row+1,col) == 'm' or self.get_value(row+1,col) == 'M')
+                            and (self.get_value(row+2, col) == 'b' or self.get_value(row+2, col) == 'B')):
+                                continue
 
                         actions.append(((row, col), (row + length, col)))
 
@@ -430,6 +474,13 @@ class Board:
                         or (self.adjacent_values_right(row, col + 1) in PIECES)):
                             continue
 
+                        if x is None and y is None and self.row[row] < 2:
+                            continue
+
+                        if ((self.get_value(row, col) == 'l' or self.get_value(row, col) == 'L')
+                        and (self.get_value(row, col+1) == 'r' or self.get_value(row, col+1) == 'R')):
+                            continue
+
                         actions.append(((row, col),(row, col + length)))
 
             for col in range(BOARD_SIZE):
@@ -441,6 +492,13 @@ class Board:
                         or (y != 'u' and y != 'b' and y != 'B' and y is not None)
                         or (self.adjacent_values_top(row, col) in PIECES)
                         or (self.adjacent_values_bottom(row + 1, col) in PIECES)):
+                            continue
+
+                        if x is None and y is None and self.row[row] < 2:
+                            continue
+
+                        if ((self.get_value(row, col) == 't' or self.get_value(row, col) == 'T')
+                        and (self.get_value(row+1, col) == 'b' or self.get_value(row+1, col) == 'B')):
                             continue
 
                         actions.append(((row, col), (row + length, col)))
@@ -621,12 +679,13 @@ class Board:
             if state == new_board.free_row + new_board.unknown_coord:
                 break
 
-        print("-----ACTION_TAKEN-----")
-        print("(ACT)",action)
-        new_board.print_board()
-        print("-----ACTION_FINISHED-----")
-
         new_board.count_boats()
+
+#        print("-----ACTION_TAKEN-----")
+#        print("(ACT)",action)
+#        new_board.print_board()
+#        print("-----ACTION_FINISHED-----")
+
 
         return new_board
 
@@ -739,7 +798,6 @@ class Bimaru(Problem):
         print("(ALL_BOATS)",state.board.all_boats_places())
         print("TOTAL = ", state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places())
         print("----FINISHED-----")
-
         return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places() and state.board.board_completed()
 
     def h(self, node: Node):
