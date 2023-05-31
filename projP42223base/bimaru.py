@@ -62,7 +62,6 @@ class Board:
 
         while True:
             state = self.free_row[:] + self.unknown_coord[:]
-            self.print_board()
             self.fill_water()
             self.fill_boats()
             self.process_unknown()
@@ -249,6 +248,8 @@ class Board:
             v = tuple(element.lower() if element is not None else None for element in v)
             h = tuple(element.lower() if element is not None else None for element in h)
 
+            if self.boats[3] == 0 and self.boats[2] == 0 and self.boats[1] == 0:
+                self.set_value(row, col, 'c')
 
             #circle piece
             if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w')
@@ -275,7 +276,8 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                and v[1] !=  'w' and v[1] is not None)):
+                and v[1] !=  'w' and v[1] is not None)
+                and self.adjacent_values_top(row, col) not in PIECES):
                 self.set_value(row, col, 't')
                 self.unknown_coord.remove((row, col))
 
@@ -284,7 +286,8 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                and v[0] !=  'w' and v[0] is not None)):
+                and v[0] !=  'w' and v[0] is not None)
+                and self.adjacent_values_bottom(row, col) not in PIECES):
                 self.set_value(row, col, 'b')
                 self.unknown_coord.remove((row, col))
 
@@ -311,7 +314,8 @@ class Board:
                 and (((v[0] == 'w' and v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                and h[0] != 'w' and h[0] is not None)):
+                and h[0] != 'w' and h[0] is not None)
+                and self.adjacent_values_right(row, col) not in PIECES):
                 self.set_value(row, col, 'r')
                 self.unknown_coord.remove((row, col))
 
@@ -320,7 +324,8 @@ class Board:
                 and (((v[0] == 'w',v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                and h[1] != 'w' and h[1] is not None)):
+                and h[1] != 'w' and h[1] is not None)
+                and self.adjacent_values_left(row, col) not in PIECES):
                 self.set_value(row, col, 'l')
                 self.unknown_coord.remove((row, col))
 
@@ -502,8 +507,17 @@ class Board:
                             continue
 
                         actions.append(((row, col), (row + length, col)))
+        elif length == 0:
+            for row in range(BOARD_SIZE):
+                if ROW_HINTS[row] > 0 and self.free_row[row] > 0:
+                    for col in range(BOARD_SIZE):
+                        x = self.get_value(row, col)
+                        if x != 'u' and x is not None:
+                            continue
+                        actions.append(((row, col),(row, col)))
 
-        print("(ACTS)", actions)
+
+        #print("(ACTS)", actions)
         return actions
 
     def print_board(self):
@@ -643,7 +657,9 @@ class Board:
             new_board.set_value(action[0][0], action[0][1], 'c')
 
         elif horizontal == 0:
-            if vertical == 1:
+            if vertical == 0:
+                new_board.set_value(action[0][0], action[0][1], 'c')
+            elif vertical == 1:
                 new_board.set_value(action[0][0], action[0][1], 'l')
                 new_board.set_value(action[1][0], action[1][1], 'r')
             elif vertical == 2:
@@ -657,7 +673,9 @@ class Board:
                 new_board.set_value(action[1][0], action[1][1], 'r')
 
         elif vertical == 0:
-            if horizontal == 1:
+            if horizontal == 0:
+                new_board.set_value(action[0][0], action[0][1], 'c')
+            elif horizontal == 1:
                 new_board.set_value(action[0][0], action[0][1], 't')
                 new_board.set_value(action[1][0], action[1][1], 'b')
             elif horizontal == 2:
@@ -773,6 +791,7 @@ class Bimaru(Problem):
         partir do estado passado como argumento."""
         if not state.board.is_valid() or state.board.invalid:
             return []
+        state.board.process_unknown()
         return state.board.calculate_actions()
 
     def result(self, state: BimaruState, action):
@@ -791,13 +810,13 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        print("-----GOAL TEST-----")
-        print(state.board.print_board())
-        print("(VALID)", state.board.is_valid())
-        print("(PIECES)", state.board.get_remaining_pieces())
-        print("(ALL_BOATS)",state.board.all_boats_places())
-        print("TOTAL = ", state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places())
-        print("----FINISHED-----")
+        #print("-----GOAL TEST-----")
+        #print(state.board.print_board())
+        #print("(VALID)", state.board.is_valid())
+        #print("(PIECES)", state.board.get_remaining_pieces())
+        #print("(ALL_BOATS)",state.board.all_boats_places())
+        #print("TOTAL = ", state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places())
+        #print("----FINISHED-----")
         return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places() and state.board.board_completed()
 
     def h(self, node: Node):
@@ -815,8 +834,7 @@ if __name__ == "__main__":
     # Imprimir para o standard output no formato indicado.
     board = Board.parse_instance()
     bimaru = Bimaru(board)
-    board.print_board()
-    print("««««««««««««««")
-    print()
+    #board.print_board()
+    #print("««««««««««««««")
     goal_node = depth_first_tree_search(bimaru)
-    print(goal_node.state.board)
+    print(goal_node.state.board, end="")
