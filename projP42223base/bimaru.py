@@ -676,7 +676,7 @@ class Board:
                         or (self.adjacent_bottom_values(row + 1, col) in PIECES)):
                             continue
 
-                        if x is None and y is None and self.row[row] < 2:
+                        if x is None and y is None and self.col[col] < 2:
                             continue
 
                         if ((self.get_value(row, col) == 't' or self.get_value(row, col) == 'T')
