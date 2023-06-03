@@ -6,12 +6,7 @@ import sys
 import numpy as np
 from search import (
     Problem,
-    Node,
-    astar_search,
-    breadth_first_tree_search,
-    depth_first_tree_search,
-    greedy_search,
-    recursive_best_first_search,
+    depth_first_tree_search
 )
 
 BOARD_SIZE = 10
@@ -39,7 +34,8 @@ class Board:
         self.invalid = False
 
     def calculate_initial_state(self, hints):
-        """Insere as hints no board e processa-o de forma a completá-lo o máximo possível, antes de executar qualquer ação."""        
+        """Insere as hints no board e processa-o de forma a completá-lo o máximo
+        possível, antes de executar qualquer ação."""        
         self.board = np.full((BOARD_SIZE, BOARD_SIZE), None, dtype=object)
         self.free_row = [BOARD_SIZE for _ in range(BOARD_SIZE)]
         self.free_col = [BOARD_SIZE for _ in range(BOARD_SIZE)]
@@ -53,38 +49,9 @@ class Board:
             v = hint[2]
             self.set_value(r, c, v)
 
-        while True:
-            state = self.free_row[:] + self.unknown_coord[:]
-            self.fill_water()
-            self.fill_boats()
-            self.process_unknown()
-            self.process_middle()
-            if state == self.free_row + self.unknown_coord:
-                break
-
-        self.count_boats()
+        self.process_board()
 
         return self
-
-    def print_board(self):
-        """Faz print do board no terminal."""
-        print("(ROW) Peças:", self.row, " Livres:", self.free_row, '\n')
-        print("(COL) Peças:", self.col, " Livres:", self.free_col, '\n')
-        print("(COR)", len(self.coord_boats), self.coord_boats, '\n')
-        print("(UKN)", len(self.unknown_coord), self.unknown_coord, '\n')
-        print("(BTS)", self.boats, '\n')
-
-        for i in range(10):
-            for j in range(10):
-                if self.get_value(i, j) is None:
-                    sys.stdout.write('?')
-                else:
-                    if self.get_value(i,j) == 'w':
-                        sys.stdout.write('.')
-                    else:
-                        sys.stdout.write(self.board[i][j])
-            sys.stdout.write('\n')
-
 
     def set_value(self, row: int, col: int, val):
         """Insere peça no board e atualiza os espaços livres e o número de peças
@@ -131,8 +98,6 @@ class Board:
             elif val != 'w' and (self.get_value(row, col) == 'u' or val.isupper()):
                 self.board[row][col] = val
 
-        return self
-
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
         if 0 <= row <= 9 and 0 <= col <= 9:
@@ -141,12 +106,12 @@ class Board:
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return self.get_value(row - 1, col), self.get_value(row + 1, col)
+        return self.get_value(row-1, col), self.get_value(row+1, col)
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return self.get_value(row, col - 1), self.get_value(row, col + 1)
+        return self.get_value(row, col-1), self.get_value(row, col+1)
 
     def adjacent_left_values(self, row: int, col: int) -> (str, str, str, str, str):
         """Devolve os valores à volta da coordenada"""
@@ -187,7 +152,6 @@ class Board:
             self.get_value(row+1, col-1),
             self.get_value(row, col-1)
         )
-
 
     def circle_case(self, r: int, c: int):
         """Preenche completamente à volta da peça com água"""
@@ -254,10 +218,10 @@ class Board:
 
     def middle_case(self, r: int, c: int):
         """"Preenche as diagonais com água. Funciona para ambas as peças 'm' e 'u'."""
-        self.set_value(r - 1, c - 1, 'w')
-        self.set_value(r - 1, c + 1, 'w')
-        self.set_value(r + 1, c + 1, 'w')
-        self.set_value(r + 1, c - 1, 'w')
+        self.set_value(r-1, c-1, 'w')
+        self.set_value(r-1, c+1, 'w')
+        self.set_value(r+1, c+1, 'w')
+        self.set_value(r+1, c-1, 'w')
 
     def fill_water(self):
         """Preenche as linhas e as colunas, que já não se possam colocar mais 
@@ -281,19 +245,19 @@ class Board:
                 for col in range(BOARD_SIZE):
                     if self.get_value(i, col) is None:
                         self.set_value(i, col, 'u')
-                        self.set_value(i - 1, col - 1, 'w')
-                        self.set_value(i - 1, col + 1, 'w')
-                        self.set_value(i + 1, col + 1, 'w')
-                        self.set_value(i + 1, col - 1, 'w')
+                        self.set_value(i-1, col-1, 'w')
+                        self.set_value(i-1, col+1, 'w')
+                        self.set_value(i+1, col+1, 'w')
+                        self.set_value(i+1, col-1, 'w')
 
             if self.col[i] != 0 and self.free_col[i] == self.col[i]:
                 for row in range(BOARD_SIZE):
                     if self.get_value(row, i) is None:
                         self.set_value(row, i, 'u')
-                        self.set_value(row - 1, i - 1, 'w')
-                        self.set_value(row - 1, i + 1, 'w')
-                        self.set_value(row + 1, i + 1, 'w')
-                        self.set_value(row + 1, i - 1, 'w')
+                        self.set_value(row-1, i-1, 'w')
+                        self.set_value(row-1, i+1, 'w')
+                        self.set_value(row+1, i+1, 'w')
+                        self.set_value(row+1, i-1, 'w')
 
     def process_unknown(self):
         """Processa as peças 'u' que estão no board, transformando-as em
@@ -311,6 +275,7 @@ class Board:
             if self.boats[3] == 0 and self.boats[2] == 0 and self.boats[1] == 0:
                 self.set_value(row, col, 'c')
 
+            #h[0] left, h[1] right, v[0] top, v[1] bottom
             #circle piece
             if ((h[0] == 'w' and h[1] == 'w' and v[0] == 'w' and v[1] == 'w')
                 or (row == 0
@@ -336,8 +301,7 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                and v[1] !=  'w' and v[1] is not None)
-                and self.adjacent_top_values(row, col) not in PIECES):
+                and v[1] !=  'w' and v[1] is not None)):
                 self.set_value(row, col, 't')
                 self.unknown_coord.remove((row, col))
 
@@ -346,8 +310,7 @@ class Board:
                 and (((h[0] == 'w' and h[1] == 'w')
                 or (col == 0 and h[1] == 'w')
                 or (col == 9 and h[0] == 'w'))
-                and v[0] !=  'w' and v[0] is not None)
-                and self.adjacent_bottom_values(row, col) not in PIECES):
+                and v[0] !=  'w' and v[0] is not None)):
                 self.set_value(row, col, 'b')
                 self.unknown_coord.remove((row, col))
 
@@ -374,8 +337,7 @@ class Board:
                 and (((v[0] == 'w' and v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                and h[0] != 'w' and h[0] is not None)
-                and self.adjacent_right_values(row, col) not in PIECES):
+                and h[0] != 'w' and h[0] is not None)):
                 self.set_value(row, col, 'r')
                 self.unknown_coord.remove((row, col))
 
@@ -384,13 +346,9 @@ class Board:
                 and (((v[0] == 'w',v[1] == 'w')
                 or (row == 0 and v[1] == 'w')
                 or (row == 9 and v[0] == 'w'))
-                and h[1] != 'w' and h[1] is not None)
-                and self.adjacent_left_values(row, col) not in PIECES):
+                and h[1] != 'w' and h[1] is not None)):
                 self.set_value(row, col, 'l')
                 self.unknown_coord.remove((row, col))
-
-            else:
-                continue
 
     def process_middle(self):
         """Preenche com 'u' caso seja possível identificar se a peça 'm' faz parte
@@ -406,16 +364,16 @@ class Board:
                 h = tuple(element.lower() if element is not None else None for element in h)
 
                 if v[0] == 'w' or v[1] == 'w' or row == 0 or row == 9:
-                    self.set_value(row, col - 1, 'u')
-                    self.set_value(row, col + 1, 'u')
-                    self.set_value(row - 1, col, 'w')
-                    self.set_value(row + 1, col, 'w')
+                    self.set_value(row, col-1, 'u')
+                    self.set_value(row, col+1, 'u')
+                    self.set_value(row-1, col, 'w')
+                    self.set_value(row+1, col, 'w')
 
                 if h[0] == 'w' or h[1] == 'w' or col == 0 or col == 9:
-                    self.set_value(row - 1, col, 'u')
-                    self.set_value(row + 1, col, 'u')
-                    self.set_value(row, col - 1, 'w')
-                    self.set_value(row, col + 1, 'w')
+                    self.set_value(row-1, col, 'u')
+                    self.set_value(row+1, col, 'u')
+                    self.set_value(row, col-1, 'w')
+                    self.set_value(row, col+1, 'w')
 
     def count_boats(self):
         """Processa o board para identificar se foram completados novos barcos"""
@@ -444,7 +402,6 @@ class Board:
                             length -= 1
                     else:
                         i += 1
-                        continue
 
                 elif h[1] is not None and h[1] != 'w' and h[1] != 'W':
                     while (row, col + length) in self.coord_boats:
@@ -460,72 +417,22 @@ class Board:
                             length -= 1
                     else:
                         i += 1
-                        continue
 
             else:
                 i += 1
 
-
-    def execute_action(self, action: list):
-        """Executa a ação passada no argumento"""
-        horizontal = action[1][0] - action[0][0]
-        vertical = action[1][1] - action[0][1]
-
-        new_board = Board(self.row.copy(), self.col.copy())
-        new_board.board = self.board.copy()
-        new_board.free_row = self.free_row.copy()
-        new_board.free_col = self.free_col.copy()
-        new_board.boats = self.boats.copy()
-        new_board.unknown_coord = self.unknown_coord.copy()
-        new_board.coord_boats = self.coord_boats.copy()
-
-        if horizontal == vertical:
-            new_board.set_value(action[0][0], action[0][1], 'c')
-
-        elif horizontal == 0:
-            if vertical == 0:
-                new_board.set_value(action[0][0], action[0][1], 'c')
-            elif vertical == 1:
-                new_board.set_value(action[0][0], action[0][1], 'l')
-                new_board.set_value(action[1][0], action[1][1], 'r')
-            elif vertical == 2:
-                new_board.set_value(action[0][0], action[0][1], 'l')
-                new_board.set_value(action[0][0], action[0][1] + 1, 'm')
-                new_board.set_value(action[1][0], action[1][1], 'r')
-            elif vertical == 3:
-                new_board.set_value(action[0][0], action[0][1], 'l')
-                new_board.set_value(action[0][0], action[0][1] + 1, 'm')
-                new_board.set_value(action[0][0], action[0][1] + 2, 'm')
-                new_board.set_value(action[1][0], action[1][1], 'r')
-
-        elif vertical == 0:
-            if horizontal == 0:
-                new_board.set_value(action[0][0], action[0][1], 'c')
-            elif horizontal == 1:
-                new_board.set_value(action[0][0], action[0][1], 't')
-                new_board.set_value(action[1][0], action[1][1], 'b')
-            elif horizontal == 2:
-                new_board.set_value(action[0][0], action[0][1], 't')
-                new_board.set_value(action[0][0] + 1, action[0][1], 'm')
-                new_board.set_value(action[1][0], action[1][1], 'b')
-            elif horizontal == 3:
-                new_board.set_value(action[0][0], action[0][1], 't')
-                new_board.set_value(action[0][0] + 1, action[0][1], 'm')
-                new_board.set_value(action[0][0] + 2, action[0][1], 'm')
-                new_board.set_value(action[1][0], action[1][1], 'b')
-
+    def process_board(self):
+        """Completa o board o máximo possível utilizando as funções de processamento"""
         while True:
-            state = new_board.free_row[:] + new_board.unknown_coord[:]
-            new_board.fill_water()
-            new_board.fill_boats()
-            new_board.process_unknown()
-            new_board.process_middle()
-            if state == new_board.free_row + new_board.unknown_coord:
+            state = self.free_row[:] + self.unknown_coord[:]
+            self.fill_water()
+            self.fill_boats()
+            self.process_unknown()
+            self.process_middle()
+            if state == self.free_row + self.unknown_coord:
                 break
 
-        new_board.count_boats()
-
-        return new_board
+        self.count_boats()
 
     def calculate_actions(self):
         """Devolve uma lista com todas as ações possíveis dependendo do tamanho 
@@ -533,14 +440,16 @@ class Board:
         cordenada que representa a peça 't' ou 'l' e a outra que representa a 
         peça 'b' ou 'r', respetivamente. Caso seja um barco de tamanho 1, as 
         duas coordenadas são iguais"""
+        actions = []
         length = 3
         while length >= 0:
             if self.boats[length] > 0:
                 break
             length -= 1
 
-        actions = []
+        # boats size 3 and 4
         if length > 1:
+            # horizontal
             for row in range(BOARD_SIZE):
                 if ROW_HINTS[row] > length and self.free_row[row] > 0:
                     for col in range(BOARD_SIZE - length):
@@ -557,9 +466,9 @@ class Board:
 
                         # analisa as coordenadas interiores
                         for j in range(length-1):
-                            x = self.get_value(row, col + j + 1)
+                            x = self.get_value(row, col+j+1)
                             if ((x != 'u' and x != 'm' and x != 'M' and x is not None)
-                            or (self.adjacent_vertical_values(row, col + j + 1) in PIECES)):
+                            or (self.adjacent_vertical_values(row, col+j+1) in PIECES)):
                                 break_outer = True
                                 break
                             if x is None: extra_pieces += 1
@@ -567,7 +476,7 @@ class Board:
                         if break_outer:
                             continue
                         # analisa a ultima coordenada
-                        x = self.get_value(row, col + length)
+                        x = self.get_value(row, col+length)
                         if ((x != 'u' and x != 'r' and x != 'R' and x is not None)
                         or (self.adjacent_right_values(row, col + length) in PIECES)):
                             continue
@@ -577,22 +486,29 @@ class Board:
                         if extra_pieces > self.row[row]:
                             continue
 
-                        if length == 3:
-                            if((self.get_value(row,col) == 'l' or self.get_value(row,col) == 'L')
-                            and (self.get_value(row,col+1) == 'm' or self.get_value(row,col+1) == 'M')
-                            and (self.get_value(row,col+2) == 'm' or self.get_value(row,col+2) == 'M')
-                            and (self.get_value(row ,col+3) == 'r' or self.get_value(row,col+3) == 'R')):
-                                continue
+                        if extra_pieces == 0:
+                            if length == 3:
+                                if((self.get_value(row, col) == 'l' 
+                                    or self.get_value(row, col) == 'L')
+                                and (self.get_value(row, col+1) == 'm' 
+                                    or self.get_value(row, col+1) == 'M')
+                                and (self.get_value(row, col+2) == 'm' 
+                                    or self.get_value(row, col+2) == 'M')
+                                and (self.get_value(row, col+3) == 'r' 
+                                    or self.get_value(row, col+3) == 'R')):
+                                    continue
 
-                        if length == 2:
-                            if ((self.get_value(row, col) == 'l' or self.get_value(row, col) == 'L')
-                            and (self.get_value(row,col+1) == 'm' or self.get_value(row,col+1) == 'M')
-                            and (self.get_value(row, col+2) == 'r' or self.get_value(row,col+2) == 'R')):
-                                continue
-
+                            else: # lenght == 2
+                                if ((self.get_value(row, col) == 'l' 
+                                    or self.get_value(row, col) == 'L')
+                                and (self.get_value(row,col+1) == 'm' 
+                                    or self.get_value(row,col+1) == 'M')
+                                and (self.get_value(row, col+2) == 'r' 
+                                    or self.get_value(row,col+2) == 'R')):
+                                    continue
 
                         actions.append(((row, col),(row, col + length)))
-
+            # vertical
             for col in range(BOARD_SIZE):
                 if COL_HINTS[col] > length and self.free_col[col] > 0:
                     for row in range(BOARD_SIZE - length):
@@ -629,22 +545,31 @@ class Board:
                         if extra_pieces > self.col[col]:
                             continue
 
-                        if length == 3:
-                            if((self.get_value(row,col) == 't' or self.get_value(row,col) == 'T')
-                            and (self.get_value(row + 1,col) == 'm' or self.get_value(row + 1,col) == 'M')
-                            and (self.get_value(row+2,col) == 'm' or self.get_value(row+2,col) == 'M')
-                            and (self.get_value(row+3 ,col) == 'b' or self.get_value(row+3,col) == 'B')):
-                                continue
+                        if extra_pieces == 0:
+                            if length == 3:
+                                if((self.get_value(row,col) == 't' 
+                                    or self.get_value(row,col) == 'T')
+                                and (self.get_value(row+1,col) == 'm' 
+                                    or self.get_value(row+1,col) == 'M')
+                                and (self.get_value(row+2,col) == 'm' 
+                                    or self.get_value(row+2,col) == 'M')
+                                and (self.get_value(row+3 ,col) == 'b' 
+                                    or self.get_value(row+3,col) == 'B')):
+                                    continue
 
-                        if length == 2:
-                            if ((self.get_value(row, col) == 't' or self.get_value(row, col) == 'T')
-                            and (self.get_value(row+1,col) == 'm' or self.get_value(row+1,col) == 'M')
-                            and (self.get_value(row+2, col) == 'b' or self.get_value(row+2, col) == 'B')):
-                                continue
+                            else:
+                                if ((self.get_value(row, col) == 't' 
+                                    or self.get_value(row, col) == 'T')
+                                and (self.get_value(row+1,col) == 'm' 
+                                    or self.get_value(row+1,col) == 'M')
+                                and (self.get_value(row+2, col) == 'b' 
+                                    or self.get_value(row+2, col) == 'B')):
+                                    continue
 
                         actions.append(((row, col), (row + length, col)))
-
+        # boats size 2
         elif length == 1:
+            # horizontal
             for row in range(BOARD_SIZE):
                 if ROW_HINTS[row] > 0 and self.free_row[row] > 0:
                     for col in range(BOARD_SIZE - length):
@@ -664,7 +589,7 @@ class Board:
                             continue
 
                         actions.append(((row, col),(row, col + length)))
-
+            # vertical
             for col in range(BOARD_SIZE):
                 if COL_HINTS[col] > 0 and self.free_col[col] > 0:
                     for row in range(BOARD_SIZE - length):
@@ -684,6 +609,7 @@ class Board:
                             continue
 
                         actions.append(((row, col), (row + length, col)))
+        # boats size 1
         elif length == 0:
             for row in range(BOARD_SIZE):
                 if ROW_HINTS[row] > 0 and self.free_row[row] > 0:
@@ -695,29 +621,70 @@ class Board:
 
         return actions
 
+    def execute_action(self, action: list):
+        """Executa a ação passada no argumento, sendo este uma lista com a
+        coordenada inicial e uma coordenada final."""
+        i_x, i_y = action[0][0], action[0][1]
+        f_x, f_y = action[1][0], action[1][1]
+
+        horizontal = f_x - i_x
+        vertical = f_y - i_y
+
+        new_board = Board(self.row.copy(), self.col.copy())
+        new_board.board = self.board.copy()
+        new_board.free_row = self.free_row.copy()
+        new_board.free_col = self.free_col.copy()
+        new_board.boats = self.boats.copy()
+        new_board.unknown_coord = self.unknown_coord.copy()
+        new_board.coord_boats = self.coord_boats.copy()
+
+        if horizontal == vertical:
+            new_board.set_value(i_x, i_y, 'c')
+
+        elif horizontal == 0:
+            if vertical == 1:
+                new_board.set_value(i_x, i_y, 'l')
+                new_board.set_value(f_x, f_y, 'r')
+            elif vertical == 2:
+                new_board.set_value(i_x, i_y, 'l')
+                new_board.set_value(i_x, i_y + 1, 'm')
+                new_board.set_value(f_x, f_y, 'r')
+            elif vertical == 3:
+                new_board.set_value(i_x, i_y, 'l')
+                new_board.set_value(i_x, i_y + 1, 'm')
+                new_board.set_value(i_x, i_y + 2, 'm')
+                new_board.set_value(f_x, f_y, 'r')
+
+        elif vertical == 0:
+            if horizontal == 1:
+                new_board.set_value(i_x, i_y, 't')
+                new_board.set_value(f_x, f_y, 'b')
+            elif horizontal == 2:
+                new_board.set_value(i_x, i_y, 't')
+                new_board.set_value(i_x + 1, i_y, 'm')
+                new_board.set_value(f_x, f_y, 'b')
+            elif horizontal == 3:
+                new_board.set_value(i_x, i_y, 't')
+                new_board.set_value(i_x + 1, i_y, 'm')
+                new_board.set_value(i_x + 2, i_y, 'm')
+                new_board.set_value(f_x, f_y, 'b')
+
+        new_board.process_board()
+
+        return new_board
 
     def is_valid(self):
-        row_pieces = 0
-        col_pieces = 0
+        """Retorna False caso o número de peças de barco em alguma linha ou 
+        coluna tenha sido ultrapassado, menor que 0, retorna True caso contrário."""
         for r in self.row:
-            row_pieces += r
             if r < 0: return False
         for c in self.col:
             if c < 0: return False
-            col_pieces += c
-        return row_pieces == col_pieces
-
-    def get_remaining_pieces(self):
-        """ Obtém o número de peças que ainda faltam colocar
-        Esta implementação implica no final após ser encontrado o goal_test
-        caso seja necessário se coloque o resto das águas necessárias
-        """
-        pieces = 0
-        for r in self.row:
-            pieces += r
-        return pieces
-
+        return True
+    
     def board_completed(self):
+        """Retorna True caso o número de peças de barco restantes em cada linha
+        e em cada coluna for 0, retorna False caso contrário."""
         for p in self.row:
             if p != 0:
                 return False
@@ -727,24 +694,20 @@ class Board:
         return True
 
     def all_boats_places(self):
-        """ verifica se todos os barcos já foram colocados
-        Esta implementação implica que sempre que coloquemos um barco se verifique se completa um barco
-        e que se vá retirando o número de barcos a ser colocados no array de barcos.
-        """
+        """Verifica se todos os barcos já foram colocados."""
         for b in self.boats:
             if b != 0:
                 return False
         return True
 
     def __repr__(self):
+        """Representação do board."""
         grid = ""
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 x = self.get_value(row, col)
                 if x == 'w':
                     x = '.'
-                elif x is None:
-                    x = '?'
                 grid += x
             grid += '\n'
         return grid
@@ -771,7 +734,6 @@ class Board:
             hints.append(tuple(sys.stdin.readline().split()[1:]))
         return Board(ROW_HINTS, COL_HINTS).calculate_initial_state(hints)
 
-
 class Bimaru(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
@@ -783,7 +745,6 @@ class Bimaru(Problem):
         partir do estado passado como argumento."""
         if not state.board.is_valid() or state.board.invalid:
             return []
-        state.board.process_unknown()
         return state.board.calculate_actions()
 
     def result(self, state: BimaruState, action):
@@ -798,12 +759,7 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        return state.board.is_valid() and state.board.get_remaining_pieces() == 0 and state.board.all_boats_places() and state.board.board_completed()
-
-    def h(self, node: Node):
-        """Função heuristica utilizada para a procura A*."""
-        pass
-
+        return state.board.is_valid() and state.board.all_boats_places() and state.board.board_completed()
 
 if __name__ == "__main__":
     board = Board.parse_instance()
